@@ -1,56 +1,55 @@
 
-# CYVORA Platform
+# CYVORA
 
-## Overview
+**An AI-powered cybersecurity and digital protection platform.**
 
-CYVORA is an AI-powered cybersecurity platform
-under development.
+CYVORA is being developed to help individuals and organisations identify, understand, report and respond to digital threats through an integrated cybersecurity platform.
 
-This repository contains the source code,
-documentation, testing resources and development
-configuration for the CYVORA project.
+## Platform Modules
 
-## Project Structure
-
-- frontend/ - User interface
-- backend/ - Backend application logic
-- database/ - Database configuration and migrations
-- datasets/ - Synthetic testing datasets
-- tests/ - Automated and manual tests
-- docs/ - Technical documentation
-- security/ - Security documentation and checklists
-- .github/ - GitHub workflows and templates
+1. **ThreatScan** – Analyse suspicious URLs, messages, screenshots and documents for potential threats.
+2. **CallTrust** – Check phone numbers and claimed institutional identities against a directory of verified contacts.
+3. **Report** – Submit suspicious activities and cybercrime reports for review.
+4. **SecureScore** – Assess cybersecurity awareness and security practices.
+5. **Academy** – Access cybersecurity learning materials, lessons and quizzes.
+6. **Command** – Central dashboard for users, administrators, alerts and platform analytics.
 
 ## Technology Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Supabase
-- GitHub Actions
+- Frontend: React, TypeScript and Vite
+- Backend: Python, Django and Django REST Framework
+- Database: PostgreSQL through Supabase
+- Authentication: Supabase Auth
+- Version control: Git and GitHub
 
-## Development Setup
+## Project Structure
 
-1. Clone the repository.
-2. Open the project in Visual Studio Code.
-3. Install the required dependencies when the frontend is initialized.
-4. Configure your local environment using .env.example.
-5. Follow CONTRIBUTING.md before submitting changes.
+```text
+CYVORA-Platform/
+├── backend/
+├── database/
+├── datasets/
+├── docs/
+├── frontend/
+├── security/
+├── tests/
+├── .env.example
+├── CONTRIBUTING.md
+├── README.md
+└── SECURITY.md
+```
 
-## Security
+## Development
 
-Never commit passwords, API keys, private tokens
-or production credentials.
+CYVORA is under active development. Features, integrations and security controls are being implemented incrementally.
 
-Use synthetic datasets for testing.
+For development guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Contribution
+For security-related information, see [SECURITY.md](SECURITY.md).
 
-All team members must use feature branches
-and submit Pull Requests before merging into main.
+## Important Security Note
 
-See CONTRIBUTING.md.
+CallTrust directory matches are reference checks, not proof of caller identity. Phone number matching alone cannot prevent caller-ID spoofing.
 
 ## Project Status
 
