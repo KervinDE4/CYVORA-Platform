@@ -1,0 +1,274 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CYVORA — ThreatScan Investigation Console</title>
+  <link rel="stylesheet" href="assets/css/threat-scan.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="cyvora-shell">
+    <header class="topbar">
+      <div class="token-box">
+        <span id="userEmailBadge" class="muted" style="font-size:0.85rem;"></span>
+        <button id="btnSignOut" type="button" class="btn secondary">Sign Out</button>
+      </div>
+      <div>
+        <h1 class="brand-title">CYVORA ThreatScan™</h1>
+        <p class="brand-sub">Digital Scam Investigation Platform</p>
+      </div>
+      <div class="token-box">
+        <input
+          id="manualJwtInput"
+          type="password"
+          class="token-input"
+          placeholder="Optional test Bearer JWT (if not logged in via Supabase)"
+        />
+        <button id="btnSaveToken" type="button" class="btn secondary">Use Token</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-scan-type="url">URL / Link</button>
+        <button type="button" class="tab-btn" data-scan-type="message">Message / SMS</button>
+        <button type="button" class="tab-btn" data-scan-type="qr">QR Payload</button>
+        <button type="button" class="tab-btn" data-scan-type="file">File / PDF</button>
+      </div>
+
+      <form id="scanForm">
+        <div class="form-row">
+          <div style="flex:2;min-width:240px;">
+            <label for="scanInput" class="muted" style="display:block;margin-bottom:4px;">Target URL, Message, or Payload</label>
+            <textarea
+              id="scanInput"
+              class="textarea-field"
+              placeholder="e.g. https://fnb-eswatini-online-portal-security-update.com/login.php?ref=wu"
+            ></textarea>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label for="channelSelect" class="muted" style="display:block;margin-bottom:4px;">Intake Channel</label>
+            <select id="channelSelect" class="select-field">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="sms">SMS</option>
+              <option value="email">Email</option>
+              <option value="telegram">Telegram</option>
+              <option value="social_dm">Social DM</option>
+            </select>
+            <div id="filePickerWrap" class="hidden" style="margin-top:10px;">
+              <label for="fileInput" class="muted" style="display:block;margin-bottom:4px;">Attach PDF</label>
+              <input id="fileInput" type="file" accept=".pdf,application/pdf" class="input-field" />
+            </div>
+          </div>
+        </div>
+
+        <button id="btnRunScan" type="submit" class="btn">Run Investigation Scan</button>
+        <div id="scanError" class="alert-error hidden"></div>
+      </form>
+    </section>
+
+    <section id="scanResultContainer" class="hidden"></section>
+
+    <section class="card">
+      <div class="form-row" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;font-size:1.05rem;">Recent Scan History</h2>
+        <div class="form-row" style="margin:0;">
+          <select id="verdictFilter" class="select-field" style="width:auto;">
+            <option value="">All Verdicts</option>
+            <option value="malicious">Malicious</option>
+            <option value="suspicious">Suspicious</option>
+            <option value="safe">Safe</option>
+          </select>
+          <button id="btnRefreshHistory" type="button" class="btn secondary">Refresh</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Input</th>
+              <th>Score</th>
+              <th>Verdict</th>
+              <th>Time (UTC)</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="5" class="muted">Click Refresh to load history.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/api/threatScanApi.js"></script>
+  <script src="assets/js/ui/threatScanRenderer.js"></script>
+  <script>
+    (async function guardThreatScan() {
+  const token = await window.CyvoraAuth.getBearerToken();
+  if (!token) {
+    window.location.replace("login.html");
+    return;
+  }
+
+  const supabase = window.CyvoraAuth.getSupabaseClient();
+  if (supabase) {
+    const { data } = await supabase.auth.getUser();
+    const badge = document.getElementById("userEmailBadge");
+    if (badge && data?.user?.email) {
+      badge.textContent = data.user.email;
+    }
+  }
+})();
+
+document.getElementById("btnSignOut")?.addEventListener("click", async () => {
+  const supabase = window.CyvoraAuth.getSupabaseClient();
+  if (supabase) {
+    await supabase.auth.signOut({ scope: "local" });
+  }
+  window.CyvoraAuth.setManualBearerToken("");
+  window.location.replace("login.html");
+});
+    (function () {
+      let currentScanType = "url";
+      let latestScan = null;
+
+      const tabs = document.querySelectorAll(".tab-btn");
+      const scanForm = document.getElementById("scanForm");
+      const scanInput = document.getElementById("scanInput");
+      const channelSelect = document.getElementById("channelSelect");
+      const filePickerWrap = document.getElementById("filePickerWrap");
+      const fileInput = document.getElementById("fileInput");
+      const btnRunScan = document.getElementById("btnRunScan");
+      const scanError = document.getElementById("scanError");
+      const resultContainer = document.getElementById("scanResultContainer");
+      const historyBody = document.getElementById("historyTableBody");
+      const verdictFilter = document.getElementById("verdictFilter");
+      const btnRefreshHistory = document.getElementById("btnRefreshHistory");
+      const manualJwtInput = document.getElementById("manualJwtInput");
+      const btnSaveToken = document.getElementById("btnSaveToken");
+
+      manualJwtInput.value = window.CyvoraAuth.getManualBearerToken();
+
+      btnSaveToken.addEventListener("click", () => {
+        window.CyvoraAuth.setManualBearerToken(manualJwtInput.value);
+        loadHistory();
+      });
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentScanType = tab.dataset.scanType;
+          filePickerWrap.classList.toggle("hidden", currentScanType !== "file");
+        });
+      });
+
+      function showError(msg) {
+        scanError.textContent = msg;
+        scanError.classList.remove("hidden");
+      }
+
+      function clearError() {
+        scanError.textContent = "";
+        scanError.classList.add("hidden");
+      }
+
+      function bindResultActions(scan) {
+        const advisorEl = document.getElementById("advisorOutput");
+        const btnAdvisor = document.getElementById("btnAdvisor");
+        const btnTakedown = document.getElementById("btnTakedown");
+        const btnEscalate = document.getElementById("btnEscalate");
+
+        if (btnAdvisor) {
+          btnAdvisor.addEventListener("click", async () => {
+            clearError();
+            try {
+              const data = await window.ThreatScanApi.fetchSecurityAdvisor(scan.id);
+              window.ThreatScanRenderer.renderAdvisorGuidance(advisorEl, data);
+            } catch (err) {
+              showError(err.message);
+            }
+          });
+        }
+
+        if (btnTakedown) {
+          btnTakedown.addEventListener("click", async () => {
+            clearError();
+            try {
+              const pkt = await window.ThreatScanApi.fetchTakedownPacket(scan.id);
+              advisorEl.classList.remove("hidden");
+              advisorEl.innerHTML = `<h4 style="margin:0 0 8px;">Takedown Packet</h4><pre style="white-space:pre-wrap;margin:0;font-size:0.85rem;">${pkt.subject}\n\n${pkt.body}</pre>`;
+            } catch (err) {
+              showError(err.message);
+            }
+          });
+        }
+
+        if (btnEscalate) {
+          btnEscalate.addEventListener("click", async () => {
+            clearError();
+            try {
+              const res = await window.ThreatScanApi.escalateScan(scan.id);
+              advisorEl.classList.remove("hidden");
+              advisorEl.innerHTML = `<p style="margin:0;"><strong>Escalated:</strong> Official scam report submitted (community reports updated: ${res.community_reports_updated}).</p>`;
+            } catch (err) {
+              showError(err.message);
+            }
+          });
+        }
+      }
+
+      async function loadHistory() {
+        try {
+          const items = await window.ThreatScanApi.fetchScanHistory(verdictFilter.value);
+          window.ThreatScanRenderer.renderScanHistory(historyBody, items);
+        } catch (err) {
+          historyBody.innerHTML = `<tr><td colspan="5" class="muted">${err.message}</td></tr>`;
+        }
+      }
+
+      scanForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+        const file = currentScanType === "file" ? fileInput.files[0] : null;
+        const inputValue = scanInput.value.trim();
+
+        if (!inputValue && !file) {
+          showError("Please enter a target URL, message, or select a PDF file.");
+          return;
+        }
+
+        btnRunScan.disabled = true;
+        btnRunScan.textContent = "Scanning...";
+        try {
+          const scan = await window.ThreatScanApi.analyzeThreat({
+            scan_type: currentScanType,
+            input_value: inputValue,
+            channel: channelSelect.value,
+            file
+          });
+          latestScan = scan;
+          window.ThreatScanRenderer.renderScanResult(resultContainer, latestScan);
+          bindResultActions(latestScan);
+          await loadHistory();
+        } catch (err) {
+          showError(err.message);
+        } finally {
+          btnRunScan.disabled = false;
+          btnRunScan.textContent = "Run Investigation Scan";
+        }
+      });
+
+      btnRefreshHistory.addEventListener("click", loadHistory);
+      verdictFilter.addEventListener("change", loadHistory);
+
+      loadHistory();
+    })();
+  </script>
+</body>
+</html>

@@ -1,4 +1,13 @@
+# backend/apps/threat_scan/services/engine.py
+from .ai_advisor import generate_ai_threat_explanation
+from .attack_story import reconstruct_attack_story
+from .community_intel import correlate_and_record_threat_intel
+from .confidence_engine import calculate_confidence_score
+from .forensics_snapshot import build_forensics_snapshot
+from .impact_predictor import predict_victim_impact
+from .regional_intel import analyze_regional_scam_context
 from .text_heuristics import analyze_message_text, extract_urls_from_text
+from .threat_dna import compute_threat_dna
 from .url_analyzer import analyze_url
 
 
@@ -10,7 +19,7 @@ def _verdict_from_score(score: int) -> str:
     return "safe"
 
 
-def _containment_steps(verdict: str, channel: str, indicators: list[dict]) -> list[dict]:
+def _containment_steps(verdict: str, channel: str) -> list[dict]:
     steps = [
         {
             "step": 1,
@@ -74,7 +83,6 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
         combined_score = min(100, max(m_res["score"], max_url_score) + (15 if m_res["score"] and max_url_score else 0))
 
     else:
-        # For 'file' or 'qr' inputs, analyze extracted text/URL if present and score payload metadata
         embedded_urls = extract_urls_from_text(raw_input)
         m_res = analyze_message_text(raw_input, channel=channel)
         message_result = m_res
@@ -90,35 +98,105 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
         max_url_score = max([u["score"] for u in url_results], default=0)
         combined_score = min(100, max(m_res["score"], max_url_score))
 
-    verdict = _verdict_from_score(combined_score)
-    containment = _containment_steps(verdict, channel, all_indicators)
+    # [Feature 7] Regional Scam Intelligence (Southern Africa)
+    primary_host = url_results[0]["host"] if url_results else ""
+    regional_intel = analyze_regional_scam_context(raw_input=raw_input, host=primary_host)
+    if regional_intel["indicators"]:
+        all_indicators.extend(regional_intel["indicators"])
+        mitre_set.update(["T1566.002", "T1598"])
+        combined_score = min(100, combined_score + regional_intel["score_boost"])
 
-    if verdict == "malicious":
-        summary = (
-            f"High-risk {scan_type} indicators detected (score {combined_score}/100). "
-            "Treat as untrusted, avoid credential/OTP entry, and escalate to incident reporting."
-        )
-    elif verdict == "suspicious":
-        summary = (
-            f"Moderate risk signals found (score {combined_score}/100). "
-            "Verify sender authenticity independently before taking any action."
-        )
-    else:
-        summary = f"No major phishing or spoofing heuristics triggered (score {combined_score}/100)."
+    verdict = _verdict_from_score(combined_score)
+    mitre_sorted = sorted(mitre_set)
+    containment = _containment_steps(verdict, channel)
+
+    # [Feature 1] CYVORA Threat DNA
+    threat_dna = compute_threat_dna(scan_type, combined_score, all_indicators, regional_intel)
+
+    # [Feature 9] Digital Forensics Snapshot
+    forensics_snapshot = build_forensics_snapshot(
+        scan_type=scan_type,
+        risk_score=combined_score,
+        indicators=all_indicators,
+        mitre_codes=mitre_sorted,
+        url_results=url_results,
+        regional_intel=regional_intel,
+        threat_dna=threat_dna,
+    )
+
+    # [Feature 6] Community Threat Intelligence
+    community_intel = correlate_and_record_threat_intel(
+        scan_type=scan_type,
+        raw_input=raw_input,
+        risk_score=combined_score,
+        url_results=url_results,
+        regional_intel=regional_intel,
+        threat_category=forensics_snapshot["threat_category"],
+    )
+
+    # [Feature 8] Threat Confidence Engine
+    confidence_score = calculate_confidence_score(
+        risk_score=combined_score,
+        indicators=all_indicators,
+        regional_intel=regional_intel,
+        community_intel=community_intel,
+    )
+
+    # [Feature 2] Victim Impact Predictor
+    impact_prediction = predict_victim_impact(
+        risk_score=combined_score,
+        threat_dna=threat_dna,
+        regional_intel=regional_intel,
+        confidence_score=confidence_score,
+    )
+
+    # [Feature 3] Attack Story Reconstruction
+    attack_story = reconstruct_attack_story(
+        scan_type=scan_type,
+        verdict=verdict,
+        threat_dna=threat_dna,
+        regional_intel=regional_intel,
+    )
 
     findings = {
+        # Existing structure preserved
         "channel": channel or "unspecified",
-        "risk_level": "critical" if combined_score >= 80 else ("high" if combined_score >= 60 else ("medium" if combined_score >= 30 else "low")),
-        "mitre_attack": sorted(mitre_set),
+        "risk_level": forensics_snapshot["risk_level"].lower(),
+        "mitre_attack": mitre_sorted,
         "indicators": all_indicators,
         "url_analysis": url_results,
         "message_analysis": message_result,
         "containment_steps": containment,
+        # New investigation intelligence layers
+        "threat_dna": threat_dna,
+        "impact_prediction": impact_prediction,
+        "attack_story": attack_story,
+        "confidence_score": confidence_score,
+        "forensics_snapshot": forensics_snapshot,
+        "regional_intelligence": {
+            "regions": regional_intel["regions"],
+            "targeted_brands": regional_intel["targeted_brands"],
+            "primary_category": regional_intel["primary_category"],
+        },
+        "community_intelligence": {
+            "similar_threats": community_intel["similar_threats"],
+            "community_reports": community_intel["community_reports"],
+        },
     }
+
+    # [Feature 4] Concise AI Threat Explainer
+    ai_explanation = generate_ai_threat_explanation(
+        scan_type=scan_type,
+        input_value=raw_input,
+        risk_score=combined_score,
+        verdict=verdict,
+        findings=findings,
+    )
+    findings["ai_explanation"] = ai_explanation
 
     return {
         "risk_score": combined_score,
         "verdict": verdict,
         "findings": findings,
-        "ai_summary": summary,
+        "ai_summary": ai_explanation,
     }

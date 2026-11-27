@@ -5,5 +5,5 @@ from .views import ThreatScanAnalyzeView, ThreatScanHistoryView, ThreatScanAdvis
 urlpatterns = [
     path("analyze/", ThreatScanAnalyzeView.as_view(), name="threat-scan-analyze"),
     path("history/", ThreatScanHistoryView.as_view(), name="threat-scan-history"),
-path("advisor/", ThreatScanAdvisorView.as_view(), name="threat-scan-advisor"),
+    path("advisor/", ThreatScanAdvisorView.as_view(), name="threat-scan-advisor"),
 ]

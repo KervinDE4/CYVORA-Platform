@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/threat-scan/', include('apps.threat_scan.urls')),
+    path("api/v1/call-trust/", include("apps.call_trust.urls")),
 ]

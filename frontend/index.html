@@ -1,0 +1,21 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CYVORA Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+</head>
+<body style="background:#0b1020;color:#eef2ff;font-family:system-ui,sans-serif;padding:24px;">
+  <p>Redirecting to CYVORA...</p>
+  <script>
+    (async function () {
+      const token = await window.CyvoraAuth.getBearerToken();
+      window.location.replace(token ? "threat-scan.html" : "login.html");
+    })();
+  </script>
+</body>
+</html>

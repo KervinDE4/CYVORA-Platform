@@ -3,7 +3,7 @@ import hashlib
 import re
 from django.db import DatabaseError
 from django.db.models import F
-from backend.apps.threat_scan.models import ThreatIntelligenceIndicator
+from apps.threat_scan.models import ThreatIntelligenceIndicator
 
 PHONE_REGEX = re.compile(r"(\+?\d[\d\s\-]{7,15}\d)")
 
