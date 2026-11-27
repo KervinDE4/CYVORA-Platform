@@ -10,6 +10,9 @@ class VerifiedCaller(models.Model):
     category = models.CharField(max_length=50, default='Financial/ Telecom')
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    claimed_institution = models.CharField(max_length=160, blank=True, default="")
+    caller_demands = models.JSONField(default=list)
+    confidence_score = models.IntegerField(default=50)
 
     class Meta:
         managed = False
@@ -30,6 +33,8 @@ class CallCheck(models.Model):
     normalized_phone = models.CharField(max_length=25, db_index=True)
     call_script = models.TextField(blank=True, default="")
     risk_score = models.IntegerField(default=0)
+    claimed_institution = models.CharField(max_length=160, blank=True, default="")
+    caller_demands = models.JSONField(default=list)
     verdict = models.CharField(
         max_length=30,
         choices=Verdict.choices,

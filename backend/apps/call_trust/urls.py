@@ -6,3 +6,6 @@ urlpatterns = [
     path("history/", CallTrustHistoryView.as_view(), name="call-trust-history"),
     path("report/", CallTrustReportView.as_view(), name="call-trust-report"),
 ]
+
+
+

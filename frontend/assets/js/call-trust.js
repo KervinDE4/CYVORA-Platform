@@ -1,4 +1,7 @@
 // frontend/assets/js/call-trust.js
+
+
+
 (function () {
   const OFFICIAL_TRUNKS = {
     "+26825186000": "First National Bank (FNB) Eswatini",
@@ -18,6 +21,7 @@
   };
 
   const selectedDemands = new Set();
+  let latestCallTrustResult = null;
 
   const form = document.getElementById("callerProbeForm");
   const numberInput = document.getElementById("inboundNumber");
@@ -40,6 +44,22 @@
   const forensicsList = document.getElementById("forensicsList");
   const btnToggleForensics = document.getElementById("btnToggleForensics");
   const forensicsBody = document.getElementById("forensicsBody");
+
+  const callReportController = window.CyvoraReportAction?.initReportControl({
+  buttonEl: document.getElementById("btnReportCallTrust"),
+  statusEl: document.getElementById("callTrustReportStatus"),
+  noteInputEl: document.getElementById("callTrustReportNote"),
+  moduleType: "call_trust",
+  getPayload: () => {
+    if (!latestCallTrustResult) return null;
+    return {
+      targetValue: latestCallTrustResult.phone_number,
+      verdict: latestCallTrustResult.verdict,
+      riskLevel: latestCallTrustResult.risk_level,
+      sourceRecordId: latestCallTrustResult.id || null,
+    };
+  },
+});
 
   function normalizePhone(raw) {
     return (raw || "").replace(/[^\d+]/g, "");
@@ -129,9 +149,15 @@
 
     forensicsList.innerHTML = (res.notes || []).map((n) => `<li>${n}</li>`).join("");
 
-    const li = document.createElement("li");
+const li = document.createElement("li");
     li.innerHTML = `<span>${res.phone_number}</span><span class="${spoofed ? "tag-spoofed" : "tag-legit"}">${spoofed ? "SPOOFED" : "LEGITIMATE"}</span>`;
     ledgerList.prepend(li);
+
+    latestCallTrustResult = res;
+    if (typeof callReportController?.refreshForCurrentTarget === "function") {
+      callReportController.refreshForCurrentTarget();
+    }
+
   }
 
   async function initUserBadge() {
@@ -146,6 +172,31 @@
       }
     } catch (_) {}
   }
+  async function loadRecentHistory() {
+  try {
+    const apiBase = window.CYVORA_CONFIG?.API_BASE_URL || "http://127.0.0.1:8000";
+    const token = await window.CyvoraAuth?.getBearerToken?.();
+    if (!token) return;
+
+    const resp = await fetch(`${apiBase}/api/v1/call-trust/history/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return;
+
+    const rows = await resp.json();
+    if (!Array.isArray(rows) || !rows.length) return;
+
+    ledgerList.innerHTML = rows
+      .slice(0, 6)
+      .map((r) => {
+        const spoofed = String(r.verdict).toUpperCase() === "SPOOFED";
+        const tagClass = spoofed ? "tag-spoofed" : "tag-legit";
+        const label = spoofed ? "SPOOFED" : "LEGITIMATE";
+        return `<li><span>${r.phone_number}</span><span class="${tagClass}">${label}</span></li>`;
+      })
+      .join("");
+  } catch (_) {}
+}
 
   document.getElementById("btnSignOut")?.addEventListener("click", async () => {
     try {

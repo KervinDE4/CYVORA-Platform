@@ -1,0 +1,268 @@
+<!-- frontend/call-trust.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CYVORA — CallTrust Authenticity Engine</title>
+  <link rel="stylesheet" href="assets/css/call-trust.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar (exact structure) -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo-box">C</div>
+        <div>
+          <div class="brand-name">CYVORA</div>
+          <div class="brand-tag">UNIFIED SEC</div>
+        </div>
+      </div>
+
+      <div class="nav-group-label">OPERATIONAL MODULES</div>
+      <nav class="nav-list">
+        <a class="nav-item" href="index.html">Command</a>
+        <a class="nav-item active" href="call-trust.html">
+          <span>CallTrust</span>
+          <span class="badge-flagship">FLAGSHIP</span>
+        </a>
+        <a class="nav-item" href="threat-scan.html">ThreatScan</a>
+        <a class="nav-item" href="#securescore">SecureScore</a>
+        <a class="nav-item" href="#academy">Academy</a>
+      </nav>
+
+      <div class="nav-group-label">SYSTEM UTILITIES</div>
+      <nav class="nav-list">
+        <a class="nav-item" href="#kb">Knowledge Base</a>
+        <a class="nav-item" href="#settings">Settings</a>
+        <a class="nav-item" href="#support">Support</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="node-line"><span class="dot-green"></span> Node: US-EAST-01</div>
+        <div class="node-sub">Latency 14ms</div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="telemetry-pill">
+          <span class="dot-green"></span> SHIELD ACTIVE · THREAT TELEMETRY CONNECTED
+        </div>
+        <input
+          id="globalLookup"
+          class="topbar-search"
+          type="text"
+          placeholder="Scan URLs, verify phone numbers, lookup incidents"
+        />
+        <div class="topbar-right">
+          <span id="userEmailBadge" class="user-badge">Analyst</span>
+          <button id="btnSignOut" type="button" class="btn-ghost">Sign Out</button>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section class="left-col">
+          <div class="page-header">
+            <div class="title-row">
+              <h1>CallTrust™ Authenticity Engine</h1>
+              <span class="pill-enterprise">ENTERPRISE TELEMETRY</span>
+            </div>
+            <p class="subtitle">
+              Independent enterprise verification for inbound caller claims, voice authenticity, and telecom routing telemetry.
+            </p>
+            <div class="protocol-bar">
+              <span class="protocol-badge"><span class="dot-green"></span> STIR/SHAKEN Protocol v3.8 Active</span>
+            </div>
+          </div>
+
+          <!-- Institutional Caller Probe -->
+          <div class="panel probe-card">
+            <div class="panel-top">
+              <h2>Institutional Caller Probe</h2>
+              <span class="panel-meta">CROSS-REFERENCE TELECOM REGISTRY</span>
+            </div>
+
+            <form id="callerProbeForm">
+              <div class="probe-row">
+                <div class="field">
+                  <label for="inboundNumber">TARGET INBOUND NUMBER</label>
+                  <input
+                    id="inboundNumber"
+                    type="text"
+                    placeholder="+268 7xxx xxxx"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="claimedInstitution">CLAIMED INSTITUTIONAL IDENTITY</label>
+                  <select id="claimedInstitution">
+                    <option value="First National Bank (FNB) Eswatini — Retail Banking">
+                      First National Bank (FNB) Eswatini — Retail Banking
+                    </option>
+                    <option value="Standard Bank Eswatini">Standard Bank Eswatini</option>
+                    <option value="MTN Eswatini / MoMo">MTN Eswatini / MoMo</option>
+                    <option value="Eswatini Revenue Service (ERS)">Eswatini Revenue Service (ERS)</option>
+                    <option value="Eswatini Electricity Company (EEC)">Eswatini Electricity Company (EEC)</option>
+                    <option value="Other / Unspecified Institution">Other / Unspecified Institution</option>
+                  </select>
+                </div>
+
+                <button id="btnVerifyAuth" type="submit" class="btn-verify">
+                  Verify Authenticity
+                </button>
+              </div>
+
+              <!-- Multi-select: What the caller needed -->
+              <div class="demands-block">
+                <div class="demands-header">
+                  <span class="demands-label">WHAT THE CALLER NEEDED (SELECT ALL THAT APPLY)</span>
+                  <span id="selectedDemandsCount" class="demands-count">0 selected</span>
+                </div>
+                <div id="callerDemandsGroup" class="chips-wrap" role="group" aria-label="What the caller needed">
+                  <button type="button" class="demand-chip" data-demand="otp_pin_reset">
+                    OTP / 2FA / PIN Reset
+                  </button>
+                  <button type="button" class="demand-chip" data-demand="account_freeze_alert">
+                    Account Freeze / Security Alert
+                  </button>
+                  <button type="button" class="demand-chip" data-demand="fee_clearance_payment">
+                    Fee / Tax / Clearance Payment
+                  </button>
+                  <button type="button" class="demand-chip" data-demand="remote_access_apk">
+                    Remote Access / APK Install
+                  </button>
+                  <button type="button" class="demand-chip" data-demand="kyc_id_card_details">
+                    KYC / ID / Card Details
+                  </button>
+                  <button type="button" class="demand-chip" data-demand="urgent_loan_prize_refund">
+                    Urgent Loan / Prize / Refund
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <div class="capability-strip">
+              <span>• Direct E.164 Trunk Ingestion</span>
+              <span>• Cryptographic CNAM Match</span>
+              <span>• SS7 / IMS Spoofing Sensor</span>
+              <span class="privacy-note">Privacy-First: No KYC or Contact Book Inspection</span>
+            </div>
+
+            <div id="probeError" class="error-banner hidden"></div>
+          </div>
+
+          <!-- Dossier / Verdict Card -->
+          <div id="dossierCard" class="panel dossier-card">
+            <div class="dossier-top">
+              <div>
+                <div id="dossierBannerTitle" class="dossier-alert">
+                  CRITICAL SPOOFING WARNING — UNAUTHORIZED CALLER
+                </div>
+                <div id="dossierMeta" class="dossier-sub">
+                  DOSSIER REF: #DOS-7914-FNB-CRIT · READY FOR PROBE
+                </div>
+              </div>
+              <span id="dossierRiskPill" class="risk-pill high">HIGH RISK</span>
+            </div>
+
+            <div class="dossier-metrics">
+              <div class="confidence-box">
+                <div class="metric-label">AUTHENTICITY CONFIDENCE</div>
+                <div class="confidence-readout">
+                  <span id="confidenceValue" class="confidence-num">12%</span>
+                  <span id="confidenceLabel" class="confidence-status">SEVERELY COMPROMISED</span>
+                </div>
+                <div class="metric-hint">Threshold: &lt;30% signals probable impersonation fraud</div>
+              </div>
+
+              <div class="details-grid">
+                <div><span class="k">Reported Target:</span> <strong id="metaTarget">+268 7914 8820</strong></div>
+                <div><span class="k">Asserted Identity:</span> <strong id="metaIdentity">FNB Eswatini (Retail Fraud)</strong></div>
+                <div><span class="k">Caller Demands:</span> <strong id="metaDemands">None selected yet</strong></div>
+                <div><span class="k">Attestation:</span> <strong id="metaAttestation">Level C (Gateway Only / Untrusted)</strong></div>
+              </div>
+            </div>
+
+            <button id="btnToggleForensics" type="button" class="forensics-toggle">
+              <span>Inspect Forensic Breakdown · 4-Pillar Matrix &amp; Safety Directives</span>
+              <span id="forensicsChevron">▾</span>
+            </button>
+            <!-- Place inside #dossierCard in frontend/call-trust.html -->
+            <div id="callTrustReportBox" class="report-action-box">
+              <input
+                id="callTrustReportNote"
+                type="text"
+                class="report-note-input hidden"
+                placeholder="Optional context (e.g., caller demanded MoMo PIN or remote APK)"
+              />
+              <button id="btnReportCallTrust" type="button" class="btn-report hidden">
+                Report Scan
+              </button>
+              <div id="callTrustReportStatus" class="report-status hidden"></div>
+            </div>
+            <div id="forensicsBody" class="forensics-body hidden">
+              <ul id="forensicsList"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column -->
+        <aside class="right-col">
+          <div class="panel trunks-card">
+            <div class="panel-top">
+              <h2>Verified Outbound Trunks</h2>
+              <span class="badge-official">OFFICIAL</span>
+            </div>
+            <ul class="trunk-list">
+              <li><span><span class="dot-green"></span> FNB Eswatini</span><strong>+268 2518 6000</strong></li>
+              <li><span><span class="dot-green"></span> Standard Bank</span><strong>+268 2405 6000</strong></li>
+              <li><span><span class="dot-green"></span> MTN MoMo</span><strong>+268 7606 0999</strong></li>
+              <li><span><span class="dot-green"></span> Eswatini Revenue</span><strong>+268 2406 4000</strong></li>
+            </ul>
+            <a href="#directory" class="directory-link">Browse Full National Trust Directory →</a>
+          </div>
+
+          <div class="panel ledger-card">
+            <div class="panel-top">
+              <h2>Recent Query Ledger</h2>
+              <span class="live-tag">LIVE NODE</span>
+            </div>
+            <ul id="recentLedgerList" class="ledger-list">
+              <li><span>+268 2518 6000</span><span class="tag-legit">LEGITIMATE</span></li>
+              <li><span>+268 7802 1194</span><span class="tag-spoofed">SPOOFED</span></li>
+              <li><span>+268 2405 6000</span><span class="tag-legit">LEGITIMATE</span></li>
+              <li><span>+27 11 356 0000</span><span class="tag-legit">LEGITIMATE</span></li>
+            </ul>
+          </div>
+
+          <div class="panel sync-card">
+            <div>
+              <div class="sync-title">Carrier Signatures Synced</div>
+              <div class="sync-sub">MTN · Eswatini Mobile · Telkom</div>
+            </div>
+            <strong class="sync-pct">100% OK</strong>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+
+  <button id="btnReportThreatScan" type="button" class="btn-report hidden">
+    Report Scan
+  </button>
+  <div id="threatScanReportStatus" class="report-status hidden"></div>
+
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/report-action.js"></script>
+  <script src="assets/js/call-trust.js"></script>
+<!--  <script src="assets/js/threatScanRenderer.js"></script>
+  <script src="assets/js/threatScanApi.js"></script> -->
+</body>
+</html>
