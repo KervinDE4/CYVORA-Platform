@@ -12,6 +12,7 @@ from typing import Any
 
 import jwt
 from cryptography import x509
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 
 from .exceptions import CertificateValidationError, PassportSignatureError
@@ -64,7 +65,7 @@ def verify_passport_signature(
     if verified_claims.get("orig") != passport.claims.get("orig") or verified_claims.get("dest") != passport.claims.get("dest"):
         raise PassportSignatureError("Verified PASSporT claims do not match the parsed assertion.")
 
-    fingerprint = certificate.fingerprint(__import__("cryptography").hazmat.primitives.hashes.SHA256()).hex()
+    fingerprint = certificate.fingerprint(hashes.SHA256()).hex()
     return SignatureVerificationResult(
         signature_valid=True,
         claims=verified_claims,
