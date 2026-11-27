@@ -15,7 +15,7 @@ from typing import Any
 from .exceptions import PassportClaimError, PassportFormatError
 
 _BASE64URL_RE = re.compile(r"^[A-Za-z0-9_-]+$")
-_E164_RE = re.compile(r"^\\+[1-9][0-9]{1,14}$")
+_E164_RE = re.compile(r"^\+[1-9][0-9]{1,14}$")
 _MAX_TOKEN_LENGTH = 16_384
 
 
