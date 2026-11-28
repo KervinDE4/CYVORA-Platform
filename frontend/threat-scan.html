@@ -7,6 +7,8 @@
   <title>CYVORA — ThreatScan Investigation Console</title>
   <link rel="stylesheet" href="assets/css/threat-scan.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
 </head>
 <body>
   <div class="cyvora-shell">
@@ -279,5 +281,6 @@ document.getElementById("btnSignOut")?.addEventListener("click", async () => {
       loadHistory();
     })();
   </script>
+  <script src="assets/js/pwa.js"></script>
 </body>
 </html>
