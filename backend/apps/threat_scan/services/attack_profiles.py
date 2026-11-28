@@ -11,7 +11,6 @@ PROFILE_CATALOG = {
         "trigger_ids": {
             "credential_harvest_cue",
             "cleartext_sensitive_path",
-            "typosquatting_similarity",
         },
         "possible_steps": [
             ("Deceptive contact or link", "An attacker may use a message or lookalike destination to draw the recipient to a sign-in page."),
@@ -45,7 +44,7 @@ PROFILE_CATALOG = {
     "malware_delivery": {
         "title": "Possible malicious file or payload delivery",
         "summary": "The submitted file or URL has signals associated with payload delivery. Static content inspection does not prove execution.",
-        "trigger_ids": {"high_risk_tld", "ip_literal_url"},
+        "trigger_ids": {"malware_payload_detected", "suspicious_file_payload"},
         "possible_steps": [
             ("Payload delivery", "The sender may be attempting to persuade the recipient to download or open a file."),
             ("Execution attempt", "If a compatible malicious file is opened and allowed to run, it may execute code. This scan has not observed execution."),
