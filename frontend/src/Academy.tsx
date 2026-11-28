@@ -22,6 +22,7 @@ const navItems = [
   { id: "courses", icon: "▤", label: "Explore courses" },
   { id: "my-learning", icon: "◷", label: "My learning" },
   { id: "ai-tutor", icon: "✧", label: "AI Tutor", fresh: true },
+  { id: "quizzes", icon: "✓", label: "Quizzes & tasks" },
   { id: "community", icon: "◎", label: "Community" },
   { id: "live-classes", icon: "◉", label: "Live classes" },
   { id: "certificates", icon: "♜", label: "Certificates" },
@@ -153,6 +154,11 @@ function Academy() {
           <div className="page-intro"><div className="eyebrow">YOUR PERSONAL LEARNING PATH</div><h1>Keep your <span>momentum.</span></h1><p>Your courses, your pace, your progress.</p></div>
           <div className="learning-summary"><div><small>IN PROGRESS</small><strong>{enrolled.length}</strong></div><div><small>LESSONS COMPLETED</small><strong>13</strong></div><div><small>XP EARNED</small><strong>1,240</strong></div><div><small>CURRENT STREAK</small><strong>🔥 4 days</strong></div></div>
           <div className="course-grid full-course-grid">{enrolled.map(c => <CourseCard key={c.id} course={c} onOpen={() => setSelected(c)}/>)}</div>
+        </section>}
+
+        {active === "quizzes" && <section className="academy-content">
+          <div className="page-intro"><div className="eyebrow">PUT YOUR KNOWLEDGE TO THE TEST</div><h1>Learn it. <span>Prove it.</span></h1><p>Quick challenges help turn new knowledge into safer everyday habits.</p></div>
+          <div className="quiz-layout"><article className="quiz-card"><div className="quiz-card-top"><span>⚡ QUICK CHECK</span><b>01 / 05</b></div><div className="eyebrow">PHISHING & SCAM AWARENESS</div><h2>You receive a text saying your bank account will be blocked unless you click a link immediately. What should you do first?</h2><div className="quiz-options">{["Click the link to check if it is real","Reply with your account details","Avoid the link and contact your bank using its official number","Forward the message to friends"].map((a,i)=><button key={a} className={quizAnswer===a?"chosen":""} onClick={()=>{setQuizAnswer(a);setQuizChecked(false);}}><span>{String.fromCharCode(65+i)}</span>{a}</button>)}</div>{quizChecked&&<div className={quizAnswer.startsWith("Avoid")?"quiz-feedback correct":"quiz-feedback"}>{quizAnswer.startsWith("Avoid")?"Correct! You should verify through an independently sourced official channel. +20 XP (demo).":"Not quite. Urgent messages and unfamiliar links are common warning signs. Try again."}</div>}<button className="modal-primary" disabled={!quizAnswer} onClick={()=>setQuizChecked(true)}>Check my answer</button></article><aside className="assignment-card"><div className="assignment-icon">📝</div><div className="eyebrow">PRACTICAL ASSIGNMENT</div><h2>Your scam-spotting checklist</h2><p>Review a sample suspicious message and list three warning signs. Never use a real person's private information.</p><ul><li>Identify the sender and their claim</li><li>Find urgency or pressure tactics</li><li>Explain how you would verify it safely</li></ul><button onClick={()=>notify("Assignment workspace will be connected in the next learning release.")}>Open assignment ↗</button></aside></div>
         </section>}
 
         {active === "ai-tutor" && <section className="academy-content tutor-page">
