@@ -97,7 +97,8 @@ class AttackStoryEvidenceTests(SimpleTestCase):
             {"id": "credential_harvest_cue", "title": "Credential form detected"}
         ])
         self.assertEqual(story[-1]["evidence_status"], "possible")
-        self.assertIn("Possible", story[-1]["title"])
+        self.assertEqual(story[-1]["evidence_status"], "possible")
+        self.assertTrue(story[-1]["title"].startswith("Possible:"))
 
 
 class AdvisorValidationTests(SimpleTestCase):
