@@ -278,8 +278,12 @@
       errorBanner.textContent =
         `Backend verification unavailable (${err?.message || "network error"}). Showing a local estimate only; do not treat it as a confirmed verification.`;
       errorBanner.classList.remove("hidden");
-      const fallback = evaluateLocalFallback(phone_number, claimed_institution, caller_demands);
-      renderResult(fallback);
+      dossierBannerTitle.textContent = "CALL CHECK UNAVAILABLE — NO VERIFIED RESULT";
+      dossierBannerTitle.style.color = "var(--amber)";
+      if (stirStatus) {
+        stirStatus.dataset.state = "unavailable";
+        stirStatus.textContent = "STIR/SHAKEN: unavailable — backend check failed";
+      }
     } finally {
       btnVerify.disabled = false;
       btnVerify.textContent = "Verify Authenticity";
