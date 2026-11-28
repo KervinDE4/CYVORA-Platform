@@ -27,6 +27,8 @@
   const numberInput = document.getElementById("inboundNumber");
   const institutionSelect = document.getElementById("claimedInstitution");
   const chipsContainer = document.getElementById("callerDemandsGroup");
+  const passportInput = document.getElementById("passportToken");
+  const stirStatus = document.getElementById("stirShakenStatus");
   const demandCountEl = document.getElementById("selectedDemandsCount");
   const btnVerify = document.getElementById("btnVerifyAuth");
   const errorBanner = document.getElementById("probeError");
@@ -120,7 +122,7 @@
       verdict: isSpoofed ? "SPOOFED" : "LEGITIMATE",
       risk_level: riskLevel,
       risk_class: riskClass,
-      attestation: isOfficial ? "Level A (Full Attestation)" : "Level C (Gateway Only / Untrusted)",
+      attestation: "Network attestation not verified",\n      stir_shaken: { status: "not_provided", message: "Local estimate only; no PASSporT was verified." },
       notes,
     };
   }
@@ -129,7 +131,7 @@
     const spoofed = String(res.verdict).toUpperCase() === "SPOOFED";
     dossierBannerTitle.textContent = spoofed
       ? "CRITICAL SPOOFING WARNING — UNAUTHORIZED CALLER"
-      : "VERIFIED OUTBOUND IDENTITY — AUTHENTICATED CALLER";
+      : "DIRECTORY MATCH — NOT CRYPTOGRAPHICALLY AUTHENTICATED";
     dossierBannerTitle.style.color = spoofed ? "var(--red)" : "var(--green)";
 
     dossierMeta.textContent = `DOSSIER REF: #CT-${Math.floor(1000 + Math.random() * 9000)} · JUST ANALYZED`;
@@ -138,7 +140,7 @@
 
     confidenceValue.textContent = `${res.confidence_score}%`;
     confidenceValue.style.color = spoofed ? "var(--red)" : "var(--green)";
-    confidenceLabel.textContent = spoofed ? "SEVERELY COMPROMISED" : "HIGH TRUST";
+    confidenceLabel.textContent = spoofed ? "SEVERELY COMPROMISED" : "DIRECTORY MATCH ONLY";
     confidenceLabel.style.color = spoofed ? "var(--red)" : "var(--green)";
 
     metaTarget.textContent = res.phone_number;
@@ -164,7 +166,7 @@
     li.append(phoneLabel, verdictLabel);
     ledgerList.prepend(li);
 
-    latestCallTrustResult = res;
+    if (stirStatus) {\n      const ss = res.stir_shaken || { status: "not_provided", message: "No PASSporT token supplied." };\n      stirStatus.textContent = `STIR/SHAKEN: ${ss.status.replaceAll("_", " ").toUpperCase()} — ${ss.message}`;\n      stirStatus.dataset.state = ss.status;\n    }\n\n    latestCallTrustResult = res;
     if (typeof callReportController?.refreshForCurrentTarget === "function") {
       callReportController.refreshForCurrentTarget();
     }
@@ -264,7 +266,7 @@
         risk_level: data.risk_level ?? "HIGH RISK",
         risk_class: data.risk_class ?? "high",
         attestation: data.attestation ?? "Level C (Gateway Only / Untrusted)",
-        notes: data.notes ?? [],
+        stir_shaken: data.stir_shaken ?? { status: "not_provided", message: "No PASSporT result returned." },\n        notes: data.notes ?? [],
       });
     } catch (err) {
       // Keep the local estimate available, but never present it as a confirmed backend check.
