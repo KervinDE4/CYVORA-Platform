@@ -6,7 +6,7 @@ from .confidence_engine import calculate_confidence_score
 from .forensics_snapshot import build_forensics_snapshot
 from .impact_predictor import predict_victim_impact
 from .regional_intel import analyze_regional_scam_context
-from .risk_scoring import verdict_from_score
+from .risk_scoring import combine_message_url_scores, verdict_from_score
 from .text_heuristics import analyze_message_text, extract_urls_from_text
 from .threat_dna import compute_threat_dna
 from .url_analyzer import analyze_url
@@ -73,7 +73,7 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
             mitre_set.update(u_res["mitre_techniques"])
 
         max_url_score = max([u["score"] for u in url_results], default=0)
-        combined_score = min(100, max(m_res["score"], max_url_score) + (15 if m_res["score"] and max_url_score else 0))
+        combined_score = combine_message_url_scores(m_res["score"], max_url_score)
 
     else:
         embedded_urls = extract_urls_from_text(raw_input)
