@@ -79,46 +79,61 @@ def analyze_regional_scam_context(raw_input: str, host: str = "") -> dict:
 
     matched_regions = []
     matched_brands = []
-    categories = []
     score_boost = 0
     confidence_boost = 0
     indicators = []
 
-    for code, pack in SOUTHERN_AFRICA_PACKS.items():
-        region_hit = False
-        if pack["dial_prefix"] in text or any(host_lower.endswith(tld) for tld in pack["tlds"]):
-            region_hit = True
+    for pack in SOUTHERN_AFRICA_PACKS.values():
+        region_hit = (
+            pack["dial_prefix"] in text
+            or any(host_lower.endswith(tld) for tld in pack["tlds"])
+        )
 
         for brand_name, meta in pack["entities"].items():
-            if any(kw in text for kw in meta["keywords"]):
+            if any(keyword in text for keyword in meta["keywords"]):
                 region_hit = True
-                is_official_domain = host_lower and any(
-                    host_lower == dom or host_lower.endswith(f".{dom}") for dom in meta["official"]
+                is_official_domain = bool(host_lower) and any(
+                    host_lower == domain or host_lower.endswith(f".{domain}")
+                    for domain in meta["official"]
                 )
                 if not is_official_domain:
-                    # Record the brand as context only. A keyword mention by
-                    # itself is not an indicator of compromise and must not affect
-                    # risk, confidence, threat category, or attack reconstruction.
+                    # A brand mention is context only, not evidence of fraud.
                     matched_brands.append(brand_name.upper())
 
         if region_hit and pack["country"] not in matched_regions:
             matched_regions.append(pack["country"])
 
-    if re.search(r"\b(wrong\s*transfer|reversed\s*by\s*mistake|send\s*back\s*momo|ewallet\s*pin|voucher\s*pin)\b", text):
-        score_boost += 15
-        confidence_boost += 10
-        categories.append("Mobile Money Reversal / Voucher Scam")
+    # A PIN/voucher PIN request is a stronger signal than a generic discussion
+    # of a mistaken transfer. Keep the latter low-weight to avoid false alarms
+    # in educational, support, or news content.
+    strong_pin_lure = bool(re.search(r"\\b(ewallet\\s*pin|voucher\\s*pin)\\b", text))
+    generic_reversal_lure = bool(re.search(
+        r"\\b(wrong\\s*transfer|reversed\\s*by\\s*mistake|send\\s*back\\s*momo)\\b",
+        text,
+    ))
+
+    if strong_pin_lure:
+        score_boost += 18
+        confidence_boost += 5
         indicators.append({
             "id": "regional_momo_reversal",
-            "title": "Regional Mobile Money / eWallet Reversal Lure",
+            "title": "Mobile Money / eWallet PIN Solicitation Pattern",
             "severity": "high",
-            "detail": "Matches a high-frequency Southern African MoMo/eWallet reversal or voucher-PIN social engineering script.",
+            "detail": "The content asks for an eWallet or voucher PIN, a sensitive credential that should never be shared.",
+        })
+    elif generic_reversal_lure:
+        score_boost += 8
+        indicators.append({
+            "id": "regional_momo_reversal_context",
+            "title": "Possible Mobile Money Reversal Script",
+            "severity": "low",
+            "detail": "The content mentions a mistaken transfer or request to return MoMo funds; this context alone does not establish fraud.",
         })
 
     return {
         "regions": matched_regions,
         "targeted_brands": sorted(set(matched_brands)),
-        "primary_category": categories[0] if categories else None,
+        "primary_category": "Mobile Money Reversal / Voucher Scam" if indicators else None,
         "score_boost": min(score_boost, 30),
         "confidence_boost": min(confidence_boost, 20),
         "indicators": indicators,
