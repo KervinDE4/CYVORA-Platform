@@ -153,6 +153,9 @@ MAILERS = {
     },
 }
 REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_RATES": {
+        "threat_scan_ai": "10/hour",
+    },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "apps.core.authentication.SupabaseJWTAuthentication",
     ],
