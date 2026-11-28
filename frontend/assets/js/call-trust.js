@@ -122,7 +122,8 @@
       verdict: isSpoofed ? "SPOOFED" : "LEGITIMATE",
       risk_level: riskLevel,
       risk_class: riskClass,
-      attestation: "Network attestation not verified",\n      stir_shaken: { status: "not_provided", message: "Local estimate only; no PASSporT was verified." },
+      attestation: "Network attestation not verified",
+      stir_shaken: { status: "not_provided", message: "Local estimate only; no PASSporT was verified." },
       notes,
     };
   }
@@ -166,7 +167,13 @@
     li.append(phoneLabel, verdictLabel);
     ledgerList.prepend(li);
 
-    if (stirStatus) {\n      const ss = res.stir_shaken || { status: "not_provided", message: "No PASSporT token supplied." };\n      stirStatus.textContent = `STIR/SHAKEN: ${ss.status.replaceAll("_", " ").toUpperCase()} — ${ss.message}`;\n      stirStatus.dataset.state = ss.status;\n    }\n\n    latestCallTrustResult = res;
+    if (stirStatus) {
+      const ss = res.stir_shaken || { status: "not_provided", message: "No PASSporT token supplied." };
+      stirStatus.textContent = `STIR/SHAKEN: ${ss.status.replaceAll("_", " ").toUpperCase()} — ${ss.message}`;
+      stirStatus.dataset.state = ss.status;
+    }
+
+    latestCallTrustResult = res;
     if (typeof callReportController?.refreshForCurrentTarget === "function") {
       callReportController.refreshForCurrentTarget();
     }
@@ -248,6 +255,7 @@
           phone_number,
           claimed_institution,
           caller_demands,
+          passport_token: passportInput?.value.trim() || "",
         }),
       });
 
@@ -265,8 +273,9 @@
         verdict: data.verdict ?? "SPOOFED",
         risk_level: data.risk_level ?? "HIGH RISK",
         risk_class: data.risk_class ?? "high",
-        attestation: data.attestation ?? "Level C (Gateway Only / Untrusted)",
-        stir_shaken: data.stir_shaken ?? { status: "not_provided", message: "No PASSporT result returned." },\n        notes: data.notes ?? [],
+        attestation: data.attestation ?? "Network attestation not cryptographically verified",
+        stir_shaken: data.stir_shaken ?? { status: "not_provided", message: "No PASSporT result returned." },
+        notes: data.notes ?? [],
       });
     } catch (err) {
       // Keep the local estimate available, but never present it as a confirmed backend check.
