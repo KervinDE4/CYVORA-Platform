@@ -44,7 +44,7 @@ def reconstruct_attack_story(
         for item in profile.get("possible_steps", []):
             story.append({
                 "step": len(story) + 1,
-                "title": item["title"],
+                "title": "Possible: " + item["title"],
                 "detail": item["detail"],
                 "evidence_status": "possible",
             })
