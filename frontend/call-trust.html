@@ -46,8 +46,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="node-line"><span class="dot-green"></span> Node: US-EAST-01</div>
-        <div class="node-sub">Latency 14ms</div>
+        <div class="node-line">Service information is shown when available.</div>
       </div>
     </aside>
 
@@ -153,12 +152,7 @@
               </div>
             </form>
 
-            <div class="capability-strip">
-              <span>• Direct E.164 Trunk Ingestion</span>
-              <span>• Cryptographic CNAM Match</span>
-              <span>• SS7 / IMS Spoofing Sensor</span>
-              <span class="privacy-note">Privacy-First: No KYC or Contact Book Inspection</span>
-            </div>
+            
 
             <div id="probeError" class="error-banner hidden"></div>
           </div>
@@ -174,15 +168,15 @@
                   DOSSIER REF: #DOS-7914-FNB-CRIT · READY FOR PROBE
                 </div>
               </div>
-              <span id="dossierRiskPill" class="risk-pill high">HIGH RISK</span>
+              <span id="dossierRiskPill" class="risk-pill">Not assessed</span>
             </div>
 
             <div class="dossier-metrics">
               <div class="confidence-box">
                 <div class="metric-label">AUTHENTICITY CONFIDENCE</div>
                 <div class="confidence-readout">
-                  <span id="confidenceValue" class="confidence-num">12%</span>
-                  <span id="confidenceLabel" class="confidence-status">SEVERELY COMPROMISED</span>
+                  <span id="confidenceValue" class="confidence-num">—</span>
+                  <span id="confidenceLabel" class="confidence-status">Awaiting assessment</span>
                 </div>
                 <div class="metric-hint">Threshold: &lt;30% signals probable impersonation fraud</div>
               </div>
@@ -239,21 +233,10 @@
               <h2>Recent Query Ledger</h2>
               <span class="live-tag">LIVE NODE</span>
             </div>
-            <ul id="recentLedgerList" class="ledger-list">
-              <li><span>+268 2518 6000</span><span class="tag-legit">LEGITIMATE</span></li>
-              <li><span>+268 7802 1194</span><span class="tag-spoofed">SPOOFED</span></li>
-              <li><span>+268 2405 6000</span><span class="tag-legit">LEGITIMATE</span></li>
-              <li><span>+27 11 356 0000</span><span class="tag-legit">LEGITIMATE</span></li>
-            </ul>
+            <ul id="recentLedgerList" class="ledger-list"><li>No call checks recorded in this session.</li></ul>
           </div>
 
-          <div class="panel sync-card">
-            <div>
-              <div class="sync-title">Carrier Signatures Synced</div>
-              <div class="sync-sub">MTN · Eswatini Mobile · Telkom</div>
-            </div>
-            <strong class="sync-pct">100% OK</strong>
-          </div>
+          
         </aside>
       </main>
     </div>
