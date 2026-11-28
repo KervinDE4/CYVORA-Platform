@@ -154,7 +154,7 @@ class CallTrustVerifyView(APIView):
                 "phone_number": record.phone_number,
                 "claimed_institution": record.claimed_institution,
                 "caller_demands": record.caller_demands,
-                "confidence_score": record.confidence_score,
+                "confidence_score": confidence,
                 "verdict": verdict_api,
                 "risk_level": risk_level,
                 "risk_class": risk_class,
