@@ -266,8 +266,11 @@
         attestation: data.attestation ?? "Level C (Gateway Only / Untrusted)",
         notes: data.notes ?? [],
       });
-    } catch (_) {
-      // Keeps the probe interactive immediately even before /api/v1/call-trust/verify/ is wired
+    } catch (err) {
+      // Keep the local estimate available, but never present it as a confirmed backend check.
+      errorBanner.textContent =
+        `Backend verification unavailable (${err?.message || "network error"}). Showing a local estimate only; do not treat it as a confirmed verification.`;
+      errorBanner.classList.remove("hidden");
       const fallback = evaluateLocalFallback(phone_number, claimed_institution, caller_demands);
       renderResult(fallback);
     } finally {
