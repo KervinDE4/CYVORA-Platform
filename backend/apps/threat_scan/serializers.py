@@ -5,13 +5,19 @@ from .models import Scan
 class ThreatScanAnalyzeSerializer(serializers.Serializer):
     scan_type = serializers.ChoiceField(choices=Scan.ScanType.values, default=Scan.ScanType.URL)
     input_value = serializers.CharField(max_length=10000, required=False, allow_blank=True, trim_whitespace=True)
-    channel = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
+    channel = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
     file = serializers.FileField(required=False, write_only=True)
+
+    ALLOWED_CHANNELS = {"", "whatsapp", "sms", "email", "telegram", "social_dm", "voice_call"}
 
     def validate(self, attrs):
         uploaded_file = attrs.get("file")
         scan_type = attrs.get("scan_type", Scan.ScanType.URL)
         input_value = (attrs.get("input_value") or "").strip()
+        channel = (attrs.get("channel") or "").strip().lower()
+
+        if channel not in self.ALLOWED_CHANNELS:
+            raise serializers.ValidationError({"channel": "Unsupported channel."})
 
         if uploaded_file is not None:
             if scan_type != Scan.ScanType.FILE:
@@ -39,6 +45,10 @@ class ThreatScanAdvisorRequestSerializer(serializers.Serializer):
 
 
 class ScanRecordSerializer(serializers.ModelSerializer):
+    scan_type = serializers.SerializerMethodField()
+    input_value = serializers.SerializerMethodField()
+    findings = serializers.SerializerMethodField()
+    ai_summary = serializers.SerializerMethodField()
     threat_dna = serializers.SerializerMethodField()
     impact_prediction = serializers.SerializerMethodField()
     attack_story = serializers.SerializerMethodField()
@@ -51,29 +61,28 @@ class ScanRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scan
         fields = [
-            "id",
-            "user_id",
-            "scan_type",
-            "input_value",
-            "risk_score",
-            "verdict",
-            "findings",
-            "ai_summary",
-            "created_at",
-            "threat_dna",
-            "impact_prediction",
-            "attack_story",
-            "ai_explanation",
-            "confidence_score",
-            "forensics_snapshot",
-            "similar_threats",
+            "id", "user_id", "scan_type", "input_value", "risk_score",
+            "verdict", "findings", "ai_summary", "created_at", "threat_dna",
+            "impact_prediction", "attack_story", "ai_explanation",
+            "confidence_score", "forensics_snapshot", "similar_threats",
             "community_reports",
         ]
         read_only_fields = fields
 
+    def get_scan_type(self, obj):
+        return obj.scan_type
+
+    def get_input_value(self, obj):
+        return obj.input_value
+
+    def get_findings(self, obj):
+        return obj.findings
+
+    def get_ai_summary(self, obj):
+        return obj.ai_summary
+
     def _findings(self, obj):
-        findings = obj.findings
-        return findings if isinstance(findings, dict) else {}
+        return obj.findings
 
     def get_threat_dna(self, obj):
         return self._findings(obj).get("threat_dna", {})
