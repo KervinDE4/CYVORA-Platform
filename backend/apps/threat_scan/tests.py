@@ -29,5 +29,6 @@ class RegionalFalsePositiveTests(SimpleTestCase):
         )
         self.assertEqual(result["score_boost"], 0)
         self.assertEqual(result["confidence_boost"], 0)
-        self.assertTrue(result["indicators"])
-        self.assertTrue(all(item["severity"] == "low" for item in result["indicators"]))
+        self.assertEqual(result["indicators"], [])
+        self.assertIsNone(result["primary_category"])
+        self.assertIn("FNB ESWATINI", result["targeted_brands"])
