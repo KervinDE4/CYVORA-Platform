@@ -4,11 +4,39 @@ from .models import Scan
 
 class ThreatScanAnalyzeSerializer(serializers.Serializer):
     scan_type = serializers.ChoiceField(choices=Scan.ScanType.values, default=Scan.ScanType.URL)
-    input_value = serializers.CharField(max_length=10000, trim_whitespace=True)
+    input_value = serializers.CharField(max_length=10000, required=False, allow_blank=True, trim_whitespace=True)
     channel = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
+    file = serializers.FileField(required=False, write_only=True)
+
+    def validate(self, attrs):
+        uploaded_file = attrs.get("file")
+        scan_type = attrs.get("scan_type", Scan.ScanType.URL)
+        input_value = (attrs.get("input_value") or "").strip()
+
+        if uploaded_file is not None:
+            if scan_type != Scan.ScanType.FILE:
+                raise serializers.ValidationError({"file": "Select the File / PDF scan type before uploading a file."})
+            if not uploaded_file.name.lower().endswith(".pdf"):
+                raise serializers.ValidationError({"file": "Only PDF files are supported."})
+            if uploaded_file.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError({"file": "PDF size must not exceed 5 MB."})
+            if uploaded_file.content_type not in (None, "", "application/pdf", "application/octet-stream"):
+                raise serializers.ValidationError({"file": "The uploaded file must be a PDF."})
+            uploaded_file.seek(0)
+            if uploaded_file.read(5) != b"%PDF-":
+                raise serializers.ValidationError({"file": "The uploaded file does not have a valid PDF header."})
+            uploaded_file.seek(0)
+        elif scan_type == Scan.ScanType.FILE:
+            raise serializers.ValidationError({"file": "Please attach a PDF file to run a file scan."})
+        elif not input_value:
+            raise serializers.ValidationError({"input_value": "Enter a URL, message, or payload to scan."})
+
+        return attrs
+
 
 class ThreatScanAdvisorRequestSerializer(serializers.Serializer):
     scan_id = serializers.UUIDField()
+
 
 class ScanRecordSerializer(serializers.ModelSerializer):
     threat_dna = serializers.SerializerMethodField()
@@ -43,26 +71,33 @@ class ScanRecordSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def _findings(self, obj):
+        findings = obj.findings
+        return findings if isinstance(findings, dict) else {}
+
     def get_threat_dna(self, obj):
-        return (obj.findings or {}).get("threat_dna", {})
+        return self._findings(obj).get("threat_dna", {})
 
     def get_impact_prediction(self, obj):
-        return (obj.findings or {}).get("impact_prediction", {})
+        return self._findings(obj).get("impact_prediction", {})
 
     def get_attack_story(self, obj):
-        return (obj.findings or {}).get("attack_story", [])
+        value = self._findings(obj).get("attack_story", [])
+        return value if isinstance(value, list) else []
 
     def get_ai_explanation(self, obj):
-        return (obj.findings or {}).get("ai_explanation") or obj.ai_summary or ""
+        return self._findings(obj).get("ai_explanation") or obj.ai_summary or ""
 
     def get_confidence_score(self, obj):
-        return (obj.findings or {}).get("confidence_score", 0)
+        return self._findings(obj).get("confidence_score", 0)
 
     def get_forensics_snapshot(self, obj):
-        return (obj.findings or {}).get("forensics_snapshot", {})
+        return self._findings(obj).get("forensics_snapshot", {})
 
     def get_similar_threats(self, obj):
-        return ((obj.findings or {}).get("community_intelligence") or {}).get("similar_threats", 0)
+        community = self._findings(obj).get("community_intelligence") or {}
+        return community.get("similar_threats", 0) if isinstance(community, dict) else 0
 
     def get_community_reports(self, obj):
-        return ((obj.findings or {}).get("community_intelligence") or {}).get("community_reports", 0)
+        community = self._findings(obj).get("community_intelligence") or {}
+        return community.get("community_reports", 0) if isinstance(community, dict) else 0
