@@ -119,7 +119,7 @@ def generate_security_advisor_guidance(scan_obj) -> dict:
         }
 
     # Deterministic structured fallback
-    if scan_obj.verdict == "safe":
+    if scan_obj.verdict in {"safe", "clean"}:
         return {
             "why_dangerous": "No high-risk phishing or malware patterns were detected in this scan, though zero-day lures can still appear legitimate.",
             "what_happens_next": "Proceeding normally carries low technical risk if you know and trust the sender.",
