@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "CYVORA — Digital Safety Platform",
+  "name": "CYVORA",
   "short_name": "CYVORA",
   "description": "Simple tools to help people check suspicious links and phone calls.",
   "start_url": "./index.html",
