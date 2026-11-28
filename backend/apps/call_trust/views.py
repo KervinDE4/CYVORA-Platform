@@ -77,7 +77,7 @@ class CallTrustVerifyView(APIView):
             if isinstance(item, str) and str(item).strip()
         ]
 
-        normalized = _normalize_phone(phone_number)
+        normalized = normalize_phone_number(phone_number)["normalized"] or _normalize_phone(phone_number)
         matched_org = OFFICIAL_TRUNKS.get(normalized)
         is_official = bool(matched_org)
 
@@ -173,10 +173,13 @@ class CallTrustHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        qs = CallCheck.objects.all()
         user_id = _get_jwt_user_id(request)
-        if user_id:
-            qs = qs.filter(user_id=user_id)
+        if not user_id:
+            return Response(
+                {"detail": "Authenticated user ID missing."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        qs = CallCheck.objects.filter(user_id=user_id)
 
         items = [
             {
