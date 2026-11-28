@@ -45,7 +45,7 @@ def _make_passport(private_key):
     }
 
     claims = {
-        "iat": 1795800000,
+        "iat": int(datetime.now(timezone.utc).timestamp()),
         "orig": {"tn": "+26876123456"},
         "dest": {"tn": "+26825186000"},
     }
