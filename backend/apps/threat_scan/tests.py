@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.test import SimpleTestCase
 
 from .services.ai_advisor import _clean_advisor_response, generate_security_advisor_guidance
+from .services.attack_profiles import build_attack_profile
 from .services.attack_story import reconstruct_attack_story
 from .services.confidence_engine import calculate_confidence_score
 from .services.risk_scoring import combine_message_url_scores, verdict_from_score
@@ -126,3 +127,50 @@ class AdvisorValidationTests(SimpleTestCase):
         guidance = generate_security_advisor_guidance(scan)
         self.assertIn("do not prove", guidance["why_dangerous"])
         self.assertIn("potential outcomes", guidance["what_happens_next"])
+
+
+
+class ThreatAttackProfileTests(SimpleTestCase):
+    def test_credential_profile_requires_credential_evidence(self):
+        profile = build_attack_profile("message", [
+            {"id": "credential_harvest_cue", "title": "PIN request", "severity": "critical"}
+        ])
+        self.assertEqual(profile["profile_id"], "credential_phishing")
+        self.assertEqual(profile["evidence"][0]["indicator_id"], "credential_harvest_cue")
+        self.assertTrue(all(step["evidence_status"] == "possible" for step in profile["possible_steps"]))
+
+    def test_financial_lure_gets_mobile_money_profile(self):
+        profile = build_attack_profile("message", [
+            {"id": "regional_momo_reversal", "title": "Wallet PIN solicitation", "severity": "high"}
+        ])
+        self.assertEqual(profile["profile_id"], "financial_social_engineering")
+
+    def test_brand_lookalike_is_not_automatically_credential_theft(self):
+        profile = build_attack_profile("url", [
+            {"id": "brand_combosquatting", "title": "Brand lookalike", "severity": "critical"}
+        ])
+        self.assertEqual(profile["profile_id"], "brand_impersonation")
+
+    def test_risky_tld_alone_does_not_mean_malware(self):
+        profile = build_attack_profile("url", [
+            {"id": "high_risk_tld", "title": "High-abuse TLD", "severity": "medium"}
+        ])
+        self.assertEqual(profile["profile_id"], "suspicious_url_infrastructure")
+        self.assertNotEqual(profile["profile_id"], "malware_delivery")
+
+    def test_no_specific_indicators_returns_unclassified_profile(self):
+        profile = build_attack_profile("qr", [])
+        self.assertEqual(profile["profile_id"], "unclassified")
+        self.assertEqual(profile["possible_steps"], [])
+
+    def test_attack_story_separates_observed_and_possible_steps(self):
+        profile = build_attack_profile("message", [
+            {"id": "financial_social_bait", "title": "Financial lure", "severity": "high"}
+        ])
+        story = reconstruct_attack_story(
+            "message", "suspicious", {}, {}, 
+            [{"id": "financial_social_bait", "title": "Financial lure", "severity": "high"}],
+            attack_profile=profile,
+        )
+        self.assertEqual(story[0]["evidence_status"], "observed")
+        self.assertTrue(all(step["evidence_status"] == "possible" for step in story[1:]))
