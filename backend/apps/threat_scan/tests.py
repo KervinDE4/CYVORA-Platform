@@ -254,3 +254,38 @@ class ImpactPredictionTests(SimpleTestCase):
         self.assertEqual(impact["confidence"], 23)
         self.assertEqual(impact["severity"], "critical")
         self.assertTrue(impact["limitations"])
+
+
+class ThreatEscalationMappingTests(SimpleTestCase):
+    def test_call_scan_maps_to_caller_spoofing(self):
+        from .views import _escalation_category
+        scan = SimpleNamespace(input_type="phone_check", channel="voice_call")
+        self.assertEqual(_escalation_category(scan), "caller_spoofing")
+
+    def test_url_scan_maps_to_malicious_link(self):
+        from .views import _escalation_category
+        scan = SimpleNamespace(input_type="url", channel="")
+        self.assertEqual(_escalation_category(scan), "malicious_link")
+
+    def test_sms_message_maps_to_sms_whatsapp_phishing(self):
+        from .views import _escalation_category
+        scan = SimpleNamespace(input_type="text", channel="sms")
+        self.assertEqual(_escalation_category(scan), "sms_whatsapp_phishing")
+
+    def test_email_and_pdf_are_not_mislabelled_as_sms_phishing(self):
+        from .views import _escalation_category
+        email = SimpleNamespace(input_type="text", channel="email")
+        pdf = SimpleNamespace(input_type="pdf", channel="")
+        self.assertIsNone(_escalation_category(email))
+        self.assertIsNone(_escalation_category(pdf))
+
+    def test_report_description_marks_report_unverified(self):
+        from .views import _build_escalation_description
+        scan = SimpleNamespace(
+            input_type="url", verdict="malicious", risk_score=85,
+            headline="URL analysis: Malicious",
+        )
+        description = _build_escalation_description(scan, "I received this link.")
+        self.assertIn("Risk score: 85/100.", description)
+        self.assertIn("I received this link.", description)
+        self.assertIn("unverified", description.lower())
