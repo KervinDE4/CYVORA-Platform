@@ -97,3 +97,39 @@ class ThreatIntelligenceIndicator(models.Model):
 
     def __str__(self):
         return f"{self.indicator_type}:{self.normalized_value} ({self.detection_count})"
+
+
+
+class ScamReport(models.Model):
+    """Django mapping for the Supabase-managed public.scam_reports table."""
+
+    CATEGORY_CHOICES = [
+        ("caller_spoofing", "Caller spoofing"),
+        ("sms_whatsapp_phishing", "SMS / WhatsApp phishing"),
+        ("malicious_link", "Malicious link"),
+        ("account_access", "Account access"),
+        ("identity_theft", "Identity theft"),
+    ]
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("in_review", "In review"),
+        ("verified", "Verified"),
+        ("rejected", "Rejected"),
+    ]
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    user_id = models.UUIDField()
+    scan_id = models.UUIDField(null=True, blank=True)
+    category = models.CharField(max_length=64, choices=CATEGORY_CHOICES)
+    offender_contact = models.TextField(null=True, blank=True)
+    description = models.TextField()
+    status = models.CharField(max_length=20, default="pending", choices=STATUS_CHOICES)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "scam_reports"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.category}:{self.status} ({self.id})"
