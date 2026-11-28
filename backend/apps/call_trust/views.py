@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.threat_scan.models import ThreatIntelligenceIndicator
-from apps.call_trust.models import CallCheck
 from apps.call_trust.services.serializers import (
     CallCheckSerializer,
     CallTrustReportSerializer,
@@ -60,6 +59,12 @@ class CallTrustVerifyView(APIView):
         claimed_institution = (request.data.get("claimed_institution") or "").strip()
         raw_demands = request.data.get("caller_demands") or []
 
+        if not isinstance(raw_demands, list):
+            return Response(
+                {"detail": "caller_demands must be a list of demand identifiers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if not phone_number:
             return Response(
                 {"detail": "phone_number is required."},
@@ -85,7 +90,6 @@ class CallTrustVerifyView(APIView):
 
         is_spoofed = (not is_official) or (confidence < 45)
         verdict_api = "SPOOFED" if is_spoofed else "LEGITIMATE"
-        verdict_db = "spoofed" if is_spoofed else "legitimate"
         risk_level = (
             "HIGH RISK" if confidence < 35 else "MEDIUM RISK" if confidence < 70 else "LOW RISK"
         )
@@ -180,8 +184,8 @@ class CallTrustHistoryView(APIView):
                 "phone_number": row.phone_number,
                 "claimed_institution": row.claimed_institution,
                 "caller_demands": row.caller_demands or [],
-                "confidence_score": int(row.findings.get("confidence_score", 100 - row.risk_score)),
-                "risk_level": row.findings.get(
+                "confidence_score": int((row.findings or {}).get("confidence_score", 100 - row.risk_score)),
+                "risk_level": (row.findings or {}).get(
                     "risk_level",
                     "HIGH RISK" if row.risk_score >= 65 else "MEDIUM RISK" if row.risk_score >= 30 else "LOW RISK",
                 ),
