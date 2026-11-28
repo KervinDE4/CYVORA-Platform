@@ -6,14 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CYVORA — CallTrust Authenticity Engine</title>
   <link rel="stylesheet" href="assets/css/call-trust.css" />
+  <link rel="stylesheet" href="assets/css/app-shell.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CYVORA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icons/cyvora-icon.svg">
 </head>
 <body>
   <div class="app-shell">
     <!-- Sidebar (exact structure) -->
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <div class="brand-logo-box">C</div>
+        <img class="brand-logo-image" src="assets/images/cyvora-logo.jpeg" alt="CYVORA">
         <div>
           <div class="brand-name">CYVORA</div>
           <div class="brand-tag">UNIFIED SEC</div>
@@ -40,8 +47,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="node-line"><span class="dot-green"></span> Node: US-EAST-01</div>
-        <div class="node-sub">Latency 14ms</div>
+        <div class="node-line">Service information is shown when available.</div>
       </div>
     </aside>
 
@@ -74,7 +80,7 @@
               Independent enterprise verification for inbound caller claims, voice authenticity, and telecom routing telemetry.
             </p>
             <div class="protocol-bar">
-              <span class="protocol-badge"><span class="dot-green"></span> STIR/SHAKEN Protocol v3.8 Active</span>
+              <span id="stirShakenStatus" class="protocol-badge" data-state="not_checked"><span class="status-dot"></span> STIR/SHAKEN: Not checked</span>
             </div>
           </div>
 
@@ -116,6 +122,8 @@
                 </button>
               </div>
 
+              <div class="field stir-token-field"><label for="passportToken">STIR/SHAKEN PASSporT (optional)</label><textarea id="passportToken" rows="3" maxlength="16384" placeholder="Paste a PASSporT token supplied by a trusted telecom source"></textarea><small>Providing a token only checks its structure and freshness at this stage. It does not prove the caller is authentic.</small></div>
+
               <!-- Multi-select: What the caller needed -->
               <div class="demands-block">
                 <div class="demands-header">
@@ -145,12 +153,7 @@
               </div>
             </form>
 
-            <div class="capability-strip">
-              <span>• Direct E.164 Trunk Ingestion</span>
-              <span>• Cryptographic CNAM Match</span>
-              <span>• SS7 / IMS Spoofing Sensor</span>
-              <span class="privacy-note">Privacy-First: No KYC or Contact Book Inspection</span>
-            </div>
+            
 
             <div id="probeError" class="error-banner hidden"></div>
           </div>
@@ -166,15 +169,15 @@
                   DOSSIER REF: #DOS-7914-FNB-CRIT · READY FOR PROBE
                 </div>
               </div>
-              <span id="dossierRiskPill" class="risk-pill high">HIGH RISK</span>
+              <span id="dossierRiskPill" class="risk-pill">Not assessed</span>
             </div>
 
             <div class="dossier-metrics">
               <div class="confidence-box">
                 <div class="metric-label">AUTHENTICITY CONFIDENCE</div>
                 <div class="confidence-readout">
-                  <span id="confidenceValue" class="confidence-num">12%</span>
-                  <span id="confidenceLabel" class="confidence-status">SEVERELY COMPROMISED</span>
+                  <span id="confidenceValue" class="confidence-num">—</span>
+                  <span id="confidenceLabel" class="confidence-status">Awaiting assessment</span>
                 </div>
                 <div class="metric-hint">Threshold: &lt;30% signals probable impersonation fraud</div>
               </div>
@@ -183,7 +186,7 @@
                 <div><span class="k">Reported Target:</span> <strong id="metaTarget">+268 7914 8820</strong></div>
                 <div><span class="k">Asserted Identity:</span> <strong id="metaIdentity">FNB Eswatini (Retail Fraud)</strong></div>
                 <div><span class="k">Caller Demands:</span> <strong id="metaDemands">None selected yet</strong></div>
-                <div><span class="k">Attestation:</span> <strong id="metaAttestation">Level C (Gateway Only / Untrusted)</strong></div>
+                <div><span class="k">STIR/SHAKEN:</span> <strong id="metaAttestation">Not checked</strong></div>
               </div>
             </div>
 
@@ -231,21 +234,10 @@
               <h2>Recent Query Ledger</h2>
               <span class="live-tag">LIVE NODE</span>
             </div>
-            <ul id="recentLedgerList" class="ledger-list">
-              <li><span>+268 2518 6000</span><span class="tag-legit">LEGITIMATE</span></li>
-              <li><span>+268 7802 1194</span><span class="tag-spoofed">SPOOFED</span></li>
-              <li><span>+268 2405 6000</span><span class="tag-legit">LEGITIMATE</span></li>
-              <li><span>+27 11 356 0000</span><span class="tag-legit">LEGITIMATE</span></li>
-            </ul>
+            <ul id="recentLedgerList" class="ledger-list"><li>No call checks recorded in this session.</li></ul>
           </div>
 
-          <div class="panel sync-card">
-            <div>
-              <div class="sync-title">Carrier Signatures Synced</div>
-              <div class="sync-sub">MTN · Eswatini Mobile · Telkom</div>
-            </div>
-            <strong class="sync-pct">100% OK</strong>
-          </div>
+          
         </aside>
       </main>
     </div>
@@ -264,5 +256,7 @@
   <script src="assets/js/call-trust.js"></script>
 <!--  <script src="assets/js/threatScanRenderer.js"></script>
   <script src="assets/js/threatScanApi.js"></script> -->
+  <script src="assets/js/pwa.js"></script>
+  <script src="assets/js/app-shell.js"></script>
 </body>
 </html>

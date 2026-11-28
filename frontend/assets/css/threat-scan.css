@@ -290,3 +290,15 @@ body {
 .btn-report:disabled { opacity: 0.7; cursor: not-allowed; }
 .report-status { flex-basis: 100%; color: var(--muted); font-size: 0.82rem; }
 .reported-locked { opacity: 0.7; cursor: not-allowed; }
+
+
+/* CYVORA light interface */
+:root{--bg:#f5f8fc;--panel:#ffffff;--panel-2:#eef4fa;--text:#172b43;--muted:#60758b;--border:#d8e2ec;--accent:#087fa8;--safe:#15803d;--suspicious:#b45309;--malicious:#b91c1c}
+body{background:var(--bg);color:var(--text)}
+.verdict-safe{color:#166534}.verdict-suspicious{color:#92400e}.verdict-malicious{color:#991b1b}
+.brand-lockup{display:flex;align-items:center;gap:14px}
+.brand-logo{width:94px;height:auto;object-fit:contain;border-radius:8px}
+.module-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:12px}
+.module-nav a{color:#29445f;text-decoration:none;font-weight:650;padding:9px 13px;border-radius:8px}
+.module-nav a:hover,.module-nav a.active{background:#e2f5fb;color:#075985}
+@media(max-width:600px){.brand-logo{width:70px}.module-nav{gap:4px}.module-nav a{padding:8px 9px;font-size:.88rem}}

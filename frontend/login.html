@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/threat-scan.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    .auth-logo{display:block;width:min(260px,80%);height:auto;margin:0 auto 16px;}
     .auth-wrapper {
       max-width: 440px;
       margin: 48px auto;
@@ -29,11 +30,17 @@
       flex: 1;
     }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CYVORA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icons/cyvora-icon.svg">
 </head>
 <body>
   <div class="cyvora-shell auth-wrapper">
     <div class="card">
-      <h1 class="brand-title">CYVORA Platform</h1>
+      <img src="assets/images/cyvora-logo.jpeg" alt="CYVORA" class="auth-logo"><h1 class="brand-title">CYVORA</h1>
       <p class="brand-sub" style="margin-bottom:18px;">
         Sign in or create an account to access ThreatScan
       </p>
@@ -116,6 +123,13 @@
         window.location.href = REDIRECT_AFTER_AUTH;
       }
 
+      // Supabase redirects confirmed email addresses back to this deployed page.
+      // Use a root-relative path so mobile email clients cannot resolve it under a nested URL.
+      const emailVerified = new URLSearchParams(window.location.search).get("verified") === "1";
+      if (emailVerified) {
+        showInfo("Your email address has been verified. You can now sign in to CYVORA.");
+      }
+
       tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
           clearNotices();
@@ -131,7 +145,7 @@
         const supabase = window.CyvoraAuth?.getSupabaseClient();
         if (!supabase) return;
         const { data } = await supabase.auth.getSession();
-        if (data?.session?.access_token) {
+        if (data?.session?.access_token && !emailVerified) {
           goToDestination();
         }
       })();
@@ -160,7 +174,12 @@
               goToDestination();
             }
           } else {
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            const confirmationUrl = new URL("/login.html?verified=1", window.location.origin).toString();
+            const { data, error } = await supabase.auth.signUp({
+              email,
+              password,
+              options: { emailRedirectTo: confirmationUrl }
+            });
             if (error) throw error;
 
             // If email confirmation is off in Supabase, a session is returned right away
@@ -180,5 +199,6 @@
     })();
 
   </script>
+  <script src="assets/js/pwa.js"></script>
 </body>
 </html>

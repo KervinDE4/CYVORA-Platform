@@ -1,12 +1,12 @@
 /* frontend/assets/css/call-trust.css */
 :root {
-  --bg-app: #070c16;
-  --bg-sidebar: #09101d;
-  --bg-panel: #0d1627;
-  --bg-input: #080f1c;
-  --border: #1b2a44;
-  --text: #e6edf7;
-  --muted: #8b9bb4;
+  --bg-app: #f5f8fc;
+  --bg-sidebar: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-input: #f0f5fa;
+  --border: #d8e2ec;
+  --text: #172b43;
+  --muted: #60758b;
   --cyan: #18b6e6;
   --green: #16c784;
   --red: #ef4444;
@@ -486,3 +486,19 @@ body {
   font-size: 0.78rem;
   color: var(--muted, #8b9bb4);
 }
+.brand-logo-image{width:48px;height:48px;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+
+/* Light CYVORA interface */
+.nav-item:hover{background:#eef5fa;color:#173a58}
+.nav-item.active{background:#e2f5fb;color:#075985;border-color:#b6e3f1}
+.brand-logo-image{width:58px;height:58px;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+
+/* Dynamic STIR/SHAKEN status: neutral by default, never green without evidence. */
+.protocol-badge{color:var(--muted);background:rgba(100,116,139,.08);border-color:var(--border);white-space:normal}
+.protocol-badge[data-state="parsed_unverified"]{color:#9a6700;background:#fff8e1;border-color:#e7c96b}
+.protocol-badge[data-state="rejected_invalid"],.protocol-badge[data-state="rejected_stale"]{color:#b42318;background:#fff1f0;border-color:#f3b5b0}
+.protocol-badge[data-state="verified"]{color:#137547;background:#eaf8f0;border-color:#9ad4b3}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;flex:none}
+.stir-token-field{margin-top:14px}
+.stir-token-field textarea{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font:inherit}
+.stir-token-field small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}

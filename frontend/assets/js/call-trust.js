@@ -20,6 +20,8 @@
     urgent_loan_prize_refund: "Urgent Loan / Prize / Refund",
   };
 
+  const passportInput = document.getElementById("passportToken");
+  const stirStatus = document.getElementById("stirShakenStatus");
   const selectedDemands = new Set();
   let latestCallTrustResult = null;
 
@@ -145,7 +147,12 @@
     metaIdentity.textContent = res.claimed_institution;
     const demandsText = (res.caller_demands || []).map((d) => DEMAND_LABELS[d] || d).join(", ");
     metaDemands.textContent = demandsText || "None selected";
-    metaAttestation.textContent = res.attestation || "Level C (Gateway Only / Untrusted)";
+    const stir = res.stir_shaken || { status: "not_provided", message: "No PASSporT result returned." };
+    metaAttestation.textContent = stir.status.replaceAll("_", " ").toUpperCase();
+    if (stirStatus) {
+      stirStatus.dataset.state = stir.status;
+      stirStatus.textContent = `STIR/SHAKEN: ${stir.status.replaceAll("_", " ")} — ${stir.message}`;
+    }
 
     // Render API/user-controlled values as text, never as HTML.
     forensicsList.replaceChildren();
@@ -271,8 +278,12 @@
       errorBanner.textContent =
         `Backend verification unavailable (${err?.message || "network error"}). Showing a local estimate only; do not treat it as a confirmed verification.`;
       errorBanner.classList.remove("hidden");
-      const fallback = evaluateLocalFallback(phone_number, claimed_institution, caller_demands);
-      renderResult(fallback);
+      dossierBannerTitle.textContent = "CALL CHECK UNAVAILABLE — NO VERIFIED RESULT";
+      dossierBannerTitle.style.color = "var(--amber)";
+      if (stirStatus) {
+        stirStatus.dataset.state = "unavailable";
+        stirStatus.textContent = "STIR/SHAKEN: unavailable — backend check failed";
+      }
     } finally {
       btnVerify.disabled = false;
       btnVerify.textContent = "Verify Authenticity";
