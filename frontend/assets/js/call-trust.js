@@ -147,10 +147,21 @@
     metaDemands.textContent = demandsText || "None selected";
     metaAttestation.textContent = res.attestation || "Level C (Gateway Only / Untrusted)";
 
-    forensicsList.innerHTML = (res.notes || []).map((n) => `<li>${n}</li>`).join("");
+    // Render API/user-controlled values as text, never as HTML.
+    forensicsList.replaceChildren();
+    (res.notes || []).forEach((note) => {
+      const item = document.createElement("li");
+      item.textContent = String(note);
+      forensicsList.appendChild(item);
+    });
 
-const li = document.createElement("li");
-    li.innerHTML = `<span>${res.phone_number}</span><span class="${spoofed ? "tag-spoofed" : "tag-legit"}">${spoofed ? "SPOOFED" : "LEGITIMATE"}</span>`;
+    const li = document.createElement("li");
+    const phoneLabel = document.createElement("span");
+    phoneLabel.textContent = String(res.phone_number || "");
+    const verdictLabel = document.createElement("span");
+    verdictLabel.className = spoofed ? "tag-spoofed" : "tag-legit";
+    verdictLabel.textContent = spoofed ? "SPOOFED" : "LEGITIMATE";
+    li.append(phoneLabel, verdictLabel);
     ledgerList.prepend(li);
 
     latestCallTrustResult = res;
@@ -186,15 +197,18 @@ const li = document.createElement("li");
     const rows = await resp.json();
     if (!Array.isArray(rows) || !rows.length) return;
 
-    ledgerList.innerHTML = rows
-      .slice(0, 6)
-      .map((r) => {
-        const spoofed = String(r.verdict).toUpperCase() === "SPOOFED";
-        const tagClass = spoofed ? "tag-spoofed" : "tag-legit";
-        const label = spoofed ? "SPOOFED" : "LEGITIMATE";
-        return `<li><span>${r.phone_number}</span><span class="${tagClass}">${label}</span></li>`;
-      })
-      .join("");
+    ledgerList.replaceChildren();
+    rows.slice(0, 6).forEach((row) => {
+      const spoofed = String(row.verdict).toUpperCase() === "SPOOFED";
+      const item = document.createElement("li");
+      const phoneLabel = document.createElement("span");
+      phoneLabel.textContent = String(row.phone_number || "");
+      const verdictLabel = document.createElement("span");
+      verdictLabel.className = spoofed ? "tag-spoofed" : "tag-legit";
+      verdictLabel.textContent = spoofed ? "SPOOFED" : "LEGITIMATE";
+      item.append(phoneLabel, verdictLabel);
+      ledgerList.appendChild(item);
+    });
   } catch (_) {}
 }
 
