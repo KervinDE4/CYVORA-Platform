@@ -1,5 +1,6 @@
 # backend/apps/threat_scan/services/engine.py
 from .ai_advisor import generate_ai_threat_explanation
+from .attack_profiles import build_attack_profile
 from .attack_story import reconstruct_attack_story
 from .community_intel import correlate_and_record_threat_intel
 from .confidence_engine import calculate_confidence_score
@@ -143,13 +144,15 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
         confidence_score=confidence_score,
     )
 
-    # [Feature 3] Attack Story Reconstruction
+    # [Feature 3] Evidence-led threat profile and attack story
+    attack_profile = build_attack_profile(scan_type, all_indicators)
     attack_story = reconstruct_attack_story(
         scan_type=scan_type,
         verdict=verdict,
         threat_dna=threat_dna,
         regional_intel=regional_intel,
         indicators=all_indicators,
+        attack_profile=attack_profile,
     )
 
     findings = {
@@ -165,6 +168,7 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
         "threat_dna": threat_dna,
         "impact_prediction": impact_prediction,
         "attack_story": attack_story,
+        "attack_profile": attack_profile,
         "confidence_score": confidence_score,
         "forensics_snapshot": forensics_snapshot,
         "regional_intelligence": {
