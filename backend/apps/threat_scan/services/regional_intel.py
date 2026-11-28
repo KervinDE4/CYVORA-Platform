@@ -133,7 +133,7 @@ def analyze_regional_scam_context(raw_input: str, host: str = "") -> dict:
     return {
         "regions": matched_regions,
         "targeted_brands": sorted(set(matched_brands)),
-        "primary_category": "Mobile Money Reversal / Voucher Scam" if indicators else None,
+        "primary_category": "Mobile Money Reversal / Voucher Scam" if strong_pin_lure else None,
         "score_boost": min(score_boost, 30),
         "confidence_boost": min(confidence_boost, 20),
         "indicators": indicators,
