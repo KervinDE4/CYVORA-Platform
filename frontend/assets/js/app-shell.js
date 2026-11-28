@@ -28,7 +28,7 @@
   header.className = "cyvora-global-header";
   header.innerHTML = `
     <button class="cyvora-menu-button" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
-    <a class="cyvora-brand" href="index.html" aria-label="CYVORA home">
+    <a class="cyvora-brand" href="command.html" aria-label="CYVORA home">
       <img src="assets/images/cyvora-logo.jpeg" alt="">
       <span><strong>CYVORA</strong><small>PROTECT. VERIFY. REPORT.</small></span>
     </a>
@@ -45,15 +45,17 @@
   sidebar.innerHTML = `
     <div class="cyvora-sidebar-heading">PLATFORM</div>
     <nav class="cyvora-sidebar-nav">
-      <a class="cyvora-nav-link" href="index.html"><span class="cyvora-nav-icon">⌂</span><span class="cyvora-nav-label">Home</span></a>
+      <a class="cyvora-nav-link" href="command.html"><span class="cyvora-nav-icon">⌂</span><span class="cyvora-nav-label">Command</span></a>
       <a class="cyvora-nav-link" href="call-trust.html"><span class="cyvora-nav-icon">◉</span><span class="cyvora-nav-label">CallTrust</span></a>
       <a class="cyvora-nav-link" href="threat-scan.html"><span class="cyvora-nav-icon">⌕</span><span class="cyvora-nav-label">ThreatScan</span></a>
+      <a class="cyvora-nav-link" href="secure-score.html"><span class="cyvora-nav-icon">◈</span><span class="cyvora-nav-label">SecureScore</span></a>
+      <a class="cyvora-nav-link" href="academy.html"><span class="cyvora-nav-icon">▣</span><span class="cyvora-nav-label">Academy</span></a>
+      <a class="cyvora-nav-link" href="report.html"><span class="cyvora-nav-icon">▤</span><span class="cyvora-nav-label">Reports</span></a>
     </nav>
     <div class="cyvora-sidebar-heading" style="margin-top:22px">COMING NEXT</div>
     <div class="cyvora-sidebar-nav">
       <span class="cyvora-nav-disabled"><span class="cyvora-nav-icon">▥</span><span class="cyvora-nav-label">TrustVision</span><small>Planned</small></span>
       <span class="cyvora-nav-disabled"><span class="cyvora-nav-icon">◎</span><span class="cyvora-nav-label">Community</span><small>Planned</small></span>
-      <span class="cyvora-nav-disabled"><span class="cyvora-nav-icon">▤</span><span class="cyvora-nav-label">Reports</span><small>Planned</small></span>
       <span class="cyvora-nav-disabled"><span class="cyvora-nav-icon">♧</span><span class="cyvora-nav-label">Verified Directory</span><small>Planned</small></span>
     </div>
     <div class="cyvora-sidebar-foot">Only available services are linked. More CYVORA modules will appear here as they become functional.</div>`;
