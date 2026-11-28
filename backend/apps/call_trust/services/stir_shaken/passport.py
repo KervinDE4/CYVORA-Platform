@@ -34,7 +34,7 @@ def _decode_segment(segment: str) -> dict:
     return value
 
 def _e164(value, label):
-    if not isinstance(value, str) or not re.fullmatch(r"\\+[1-9][0-9]{1,14}", value):
+    if not isinstance(value, str) or not re.fullmatch(r"\+[1-9][0-9]{1,14}", value):
         raise PassportError(f"PASSporT {label} must be an E.164 telephone number.")
     return value
 
