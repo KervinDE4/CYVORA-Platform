@@ -106,9 +106,9 @@ def analyze_regional_scam_context(raw_input: str, host: str = "") -> dict:
     # A PIN/voucher PIN request is a stronger signal than a generic discussion
     # of a mistaken transfer. Keep the latter low-weight to avoid false alarms
     # in educational, support, or news content.
-    strong_pin_lure = bool(re.search(r"\\b(ewallet\\s*pin|voucher\\s*pin)\\b", text))
+    strong_pin_lure = bool(re.search(r"\b(ewallet\s*pin|voucher\s*pin)\b", text))
     generic_reversal_lure = bool(re.search(
-        r"\\b(wrong\\s*transfer|reversed\\s*by\\s*mistake|send\\s*back\\s*momo)\\b",
+        r"\b(wrong\s*transfer|reversed\s*by\s*mistake|send\s*back\s*momo)\b",
         text,
     ))
 
