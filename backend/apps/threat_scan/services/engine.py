@@ -149,6 +149,7 @@ def run_threat_scan(scan_type: str, input_value: str, channel: str = "") -> dict
         verdict=verdict,
         threat_dna=threat_dna,
         regional_intel=regional_intel,
+        indicators=all_indicators,
     )
 
     findings = {
