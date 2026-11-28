@@ -17,5 +17,7 @@ services:
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
         sync: false
+      - key: SUPABASE_URL
+        sync: false
       - key: DATABASE_URL
         sync: false
