@@ -177,7 +177,7 @@ def _build_escalation_description(scan_obj, user_description=""):
     if user_description:
         parts.append(f"User-provided context: {user_description.strip()[:2000]}")
     parts.append("This report is unverified and requires human review.")
-    return "\\n".join(parts)
+    return chr(10).join(parts)
 
 
 class ThreatScanEscalateView(APIView):
