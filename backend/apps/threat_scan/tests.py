@@ -7,6 +7,8 @@ from .services.ai_advisor import _clean_advisor_response, generate_security_advi
 from .services.attack_profiles import build_attack_profile
 from .services.attack_story import reconstruct_attack_story
 from .services.confidence_engine import calculate_confidence_score
+from .services.threat_dna import compute_threat_dna
+from .services.impact_predictor import predict_victim_impact
 from .services.risk_scoring import combine_message_url_scores, verdict_from_score
 from .services.regional_intel import analyze_regional_scam_context
 
@@ -175,3 +177,80 @@ class ThreatAttackProfileTests(SimpleTestCase):
         )
         self.assertEqual(story[0]["evidence_status"], "observed")
         self.assertTrue(all(step["evidence_status"] == "possible" for step in story[1:]))
+
+
+
+class ThreatDnaEvidenceTests(SimpleTestCase):
+    def test_brand_mention_does_not_create_credential_or_financial_dna(self):
+        dna = compute_threat_dna(
+            "message", 60, [],
+            {"targeted_brands": ["FNB"], "primary_category": None},
+        )
+        self.assertEqual(dna["credential_theft"], 0)
+        self.assertEqual(dna["financial_fraud"], 0)
+        self.assertEqual(dna["identity_theft"], 0)
+        self.assertEqual(dna["malware_delivery"], 0)
+
+    def test_file_scan_alone_does_not_mean_malware(self):
+        dna = compute_threat_dna("file", 80, [], {})
+        self.assertEqual(dna["malware_delivery"], 0)
+
+    def test_financial_lure_only_contributes_to_financial_category(self):
+        dna = compute_threat_dna(
+            "message", 65,
+            [{"id": "financial_social_bait", "severity": "high"}],
+            {},
+        )
+        self.assertEqual(dna["financial_fraud"], 40)
+        self.assertEqual(dna["credential_theft"], 0)
+        self.assertEqual(dna["malware_delivery"], 0)
+
+    def test_explicit_credential_signal_contributes_to_credential_category(self):
+        dna = compute_threat_dna(
+            "message", 80,
+            [{"id": "credential_harvest_cue", "severity": "critical"}],
+            {},
+        )
+        self.assertEqual(dna["credential_theft"], 65)
+
+    def test_category_score_never_exceeds_overall_risk(self):
+        dna = compute_threat_dna(
+            "message", 20,
+            [{"id": "credential_harvest_cue"}, {"id": "cleartext_sensitive_path"}],
+            {},
+        )
+        self.assertLessEqual(dna["credential_theft"], 20)
+
+
+class ImpactPredictionTests(SimpleTestCase):
+    def test_bank_or_brand_context_alone_does_not_claim_account_takeover(self):
+        impact = predict_victim_impact(
+            20, {"financial_fraud": 0, "credential_theft": 0},
+            {"targeted_brands": ["FNB"], "primary_category": None}, 70,
+        )
+        self.assertEqual(
+            impact["potential_outcomes"],
+            ["No specific downstream impact established from the available evidence"],
+        )
+        self.assertNotIn("Bank Account Takeover", impact["potential_outcomes"])
+
+    def test_financial_lure_is_described_as_possible_payment_fraud(self):
+        impact = predict_victim_impact(
+            55, {"financial_fraud": 40},
+            {"primary_category": None}, 62,
+        )
+        self.assertIn("Possible financial or payment fraud", impact["potential_outcomes"])
+        self.assertNotIn("Bank Account Takeover", impact["potential_outcomes"])
+
+    def test_wallet_fraud_requires_specific_mobile_money_context(self):
+        impact = predict_victim_impact(
+            75, {"financial_fraud": 70},
+            {"primary_category": "Mobile Money Reversal / Voucher Scam"}, 80,
+        )
+        self.assertIn("Possible mobile-money or wallet fraud", impact["potential_outcomes"])
+
+    def test_impact_confidence_uses_evidence_confidence_not_risk_blend(self):
+        impact = predict_victim_impact(95, {}, {}, 23)
+        self.assertEqual(impact["confidence"], 23)
+        self.assertEqual(impact["severity"], "critical")
+        self.assertTrue(impact["limitations"])
