@@ -1,5 +1,10 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.test import SimpleTestCase
 
+from .services.ai_advisor import _clean_advisor_response, generate_security_advisor_guidance
+from .services.attack_story import reconstruct_attack_story
 from .services.confidence_engine import calculate_confidence_score
 from .services.risk_scoring import combine_message_url_scores, verdict_from_score
 from .services.regional_intel import analyze_regional_scam_context
@@ -31,18 +36,12 @@ class RiskClassificationTests(SimpleTestCase):
 
 class ConfidenceScoringTests(SimpleTestCase):
     def test_single_low_severity_indicator_does_not_create_high_confidence(self):
-        score = calculate_confidence_score(
-            15,
-            [{"id": "embedded_links", "severity": "low"}],
-            {},
-            {},
-        )
+        score = calculate_confidence_score(15, [{"id": "embedded_links", "severity": "low"}], {}, {})
         self.assertEqual(score, 29)
 
     def test_duplicate_indicator_is_counted_once(self):
         indicator = {"id": "credential_harvest_cue", "severity": "critical"}
-        score = calculate_confidence_score(35, [indicator, indicator], {}, {})
-        self.assertEqual(score, 50)
+        self.assertEqual(calculate_confidence_score(35, [indicator, indicator], {}, {}), 50)
 
     def test_multiple_indicators_and_community_reports_corroborate(self):
         score = calculate_confidence_score(
@@ -62,9 +61,7 @@ class ConfidenceScoringTests(SimpleTestCase):
 
 class RegionalFalsePositiveTests(SimpleTestCase):
     def test_brand_mention_alone_does_not_add_risk_points(self):
-        result = analyze_regional_scam_context(
-            "This document explains FNB Eswatini account services."
-        )
+        result = analyze_regional_scam_context("This document explains FNB Eswatini account services.")
         self.assertEqual(result["score_boost"], 0)
         self.assertEqual(result["confidence_boost"], 0)
         self.assertEqual(result["indicators"], [])
@@ -83,3 +80,49 @@ class RegionalFalsePositiveTests(SimpleTestCase):
         self.assertEqual(result["score_boost"], 18)
         self.assertEqual(result["confidence_boost"], 5)
         self.assertEqual(result["indicators"][0]["severity"], "high")
+
+
+class AttackStoryEvidenceTests(SimpleTestCase):
+    def test_story_does_not_claim_credentials_or_compromise_without_evidence(self):
+        story = reconstruct_attack_story("url", "malicious", {}, {}, [
+            {"id": "high_risk_tld", "title": "High-risk domain", "detail": "The URL uses a high-risk TLD."}
+        ])
+        self.assertEqual(story[0]["evidence_status"], "observed")
+        self.assertFalse(any("credentials entered" in step["title"].lower() for step in story))
+        self.assertFalse(any("account takeover" in step["title"].lower() for step in story))
+
+    def test_possible_credential_path_is_labelled_as_possible(self):
+        story = reconstruct_attack_story("url", "malicious", {}, {}, [
+            {"id": "credential_harvest_cue", "title": "Credential form detected"}
+        ])
+        self.assertEqual(story[-1]["evidence_status"], "possible")
+        self.assertIn("Possible", story[-1]["title"])
+
+
+class AdvisorValidationTests(SimpleTestCase):
+    def test_rejects_missing_or_non_string_fields(self):
+        self.assertIsNone(_clean_advisor_response({"why_dangerous": "x"}))
+
+    def test_rejects_oversized_fields(self):
+        payload = {key: "x" * 501 for key in (
+            "why_dangerous", "what_happens_next", "what_to_do_now", "what_never_to_share"
+        )}
+        self.assertIsNone(_clean_advisor_response(payload))
+
+    def test_accepts_exact_concise_schema(self):
+        payload = {key: "Clear advice." for key in (
+            "why_dangerous", "what_happens_next", "what_to_do_now", "what_never_to_share"
+        )}
+        self.assertEqual(_clean_advisor_response(payload), payload)
+
+    @patch("apps.threat_scan.services.ai_advisor._call_gemini", return_value=None)
+    def test_provider_failure_returns_safe_fallback(self, _mock):
+        scan = SimpleNamespace(
+            findings={"indicators": [{"title": "Credential form detected"}]},
+            scan_type="url",
+            verdict="malicious",
+            risk_score=80,
+        )
+        guidance = generate_security_advisor_guidance(scan)
+        self.assertIn("do not prove", guidance["why_dangerous"])
+        self.assertIn("potential outcomes", guidance["what_happens_next"])
