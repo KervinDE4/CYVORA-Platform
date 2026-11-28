@@ -1,6 +1,7 @@
 # backend/apps/call_trust/views.py
 
 import hashlib
+import time
 from django.db import DatabaseError
 from django.db.models import F
 from rest_framework import status
@@ -18,6 +19,7 @@ from apps.call_trust.services.engine import run_call_trust_check
 from .services.phone_normalizer import normalize_phone_number
 
 from .models import CallCheck
+from .services.stir_shaken.passport import PassportError, parse_passport
 
 OFFICIAL_TRUNKS = {
     "+26825186000": "First National Bank (FNB) Eswatini",
@@ -58,6 +60,24 @@ class CallTrustVerifyView(APIView):
         phone_number = (request.data.get("phone_number") or "").strip()
         claimed_institution = (request.data.get("claimed_institution") or "").strip()
         raw_demands = request.data.get("caller_demands") or []
+        passport_token = (request.data.get("passport_token") or "").strip()
+        stir_shaken = {"status": "not_provided", "message": "No PASSporT token supplied. Cryptographic caller identity is not verified."}
+        if passport_token:
+            try:
+                parsed = parse_passport(passport_token)
+                age_seconds = int(time.time()) - parsed.issued_at
+                if age_seconds < -60 or age_seconds > 600:
+                    stir_shaken = {"status": "rejected_stale", "message": "PASSporT is outside the 10-minute freshness window."}
+                else:
+                    stir_shaken = {
+                        "status": "parsed_unverified",
+                        "message": "PASSporT structure and freshness are valid. Signature and certificate trust are NOT verified.",
+                        "origin_number": parsed.origin_number,
+                        "destination_numbers": list(parsed.destination_numbers),
+                        "issued_at": parsed.issued_at,
+                    }
+            except PassportError as exc:
+                stir_shaken = {"status": "rejected_invalid", "message": str(exc)}
 
         if not isinstance(raw_demands, list):
             return Response(
@@ -117,6 +137,7 @@ class CallTrustVerifyView(APIView):
             "matched_official_trunk": matched_org,
             "caller_demands": caller_demands,
             "notes": notes,
+            "stir_shaken": stir_shaken,
         }
 
         user_id = _get_jwt_user_id(request)
@@ -163,6 +184,7 @@ class CallTrustVerifyView(APIView):
                     if is_official
                     else "Level C (Gateway Only / Untrusted)"
                 ),
+                "stir_shaken": stir_shaken,
                 "notes": notes,
             },
             status=status.HTTP_201_CREATED,
