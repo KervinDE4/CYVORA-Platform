@@ -123,6 +123,13 @@
         window.location.href = REDIRECT_AFTER_AUTH;
       }
 
+      // Supabase redirects confirmed email addresses back to this deployed page.
+      // Use a root-relative path so mobile email clients cannot resolve it under a nested URL.
+      const emailVerified = new URLSearchParams(window.location.search).get("verified") === "1";
+      if (emailVerified) {
+        showInfo("Your email address has been verified. You can now sign in to CYVORA.");
+      }
+
       tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
           clearNotices();
@@ -138,7 +145,7 @@
         const supabase = window.CyvoraAuth?.getSupabaseClient();
         if (!supabase) return;
         const { data } = await supabase.auth.getSession();
-        if (data?.session?.access_token) {
+        if (data?.session?.access_token && !emailVerified) {
           goToDestination();
         }
       })();
@@ -167,7 +174,7 @@
               goToDestination();
             }
           } else {
-            const confirmationUrl = new URL("login.html?verified=1", window.location.href).toString();
+            const confirmationUrl = new URL("/login.html?verified=1", window.location.origin).toString();
             const { data, error } = await supabase.auth.signUp({
               email,
               password,
