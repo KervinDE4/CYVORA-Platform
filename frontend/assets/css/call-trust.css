@@ -1,12 +1,12 @@
 /* frontend/assets/css/call-trust.css */
 :root {
-  --bg-app: #070c16;
-  --bg-sidebar: #09101d;
-  --bg-panel: #0d1627;
-  --bg-input: #080f1c;
-  --border: #1b2a44;
-  --text: #e6edf7;
-  --muted: #8b9bb4;
+  --bg-app: #f5f8fc;
+  --bg-sidebar: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-input: #f0f5fa;
+  --border: #d8e2ec;
+  --text: #172b43;
+  --muted: #60758b;
   --cyan: #18b6e6;
   --green: #16c784;
   --red: #ef4444;
@@ -487,3 +487,8 @@ body {
   color: var(--muted, #8b9bb4);
 }
 .brand-logo-image{width:48px;height:48px;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+
+/* Light CYVORA interface */
+.nav-item:hover{background:#eef5fa;color:#173a58}
+.nav-item.active{background:#e2f5fb;color:#075985;border-color:#b6e3f1}
+.brand-logo-image{width:58px;height:58px;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
