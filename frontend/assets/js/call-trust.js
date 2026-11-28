@@ -241,6 +241,7 @@ const li = document.createElement("li");
 
       const data = await resp.json();
       renderResult({
+        id: data.id || null,
         phone_number,
         claimed_institution,
         caller_demands,
