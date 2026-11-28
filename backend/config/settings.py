@@ -138,7 +138,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise serves collected static assets on Render.
 MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 
 # Email
