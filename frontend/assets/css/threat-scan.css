@@ -259,3 +259,34 @@ body {
   border-radius: 8px;
   margin-top: 10px;
 }
+
+/* Incident reporting controls */
+.report-action-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.report-note-input {
+  flex: 1;
+  min-width: 220px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font: inherit;
+}
+.btn-report {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-report:hover:not(:disabled) { background: rgba(239, 68, 68, 0.28); }
+.btn-report:disabled { opacity: 0.7; cursor: not-allowed; }
+.report-status { flex-basis: 100%; color: var(--muted); font-size: 0.82rem; }
+.reported-locked { opacity: 0.7; cursor: not-allowed; }
