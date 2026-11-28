@@ -16,8 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+
+def health_check(request):
+    return JsonResponse({"status": "ok", "service": "cyvora-api"})
+
 
 urlpatterns = [
+    path('health/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
     path('api/v1/threat-scan/', include('apps.threat_scan.urls')),
     path("api/v1/call-trust/", include("apps.call_trust.urls")),
