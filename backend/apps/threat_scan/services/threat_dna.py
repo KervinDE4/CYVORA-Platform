@@ -1,50 +1,59 @@
-# backend/apps/threat_scan/services/threat_dna.py
+"""Evidence-led threat-category indicators for CYVORA ThreatScan.
+
+DNA values are heuristic relevance scores, not probabilities or proof of impact.
+Only explicit detector indicator IDs contribute; a file scan or brand mention
+alone must not imply malware or identity theft.
+"""
+
+CATEGORY_WEIGHTS = {
+    "social_engineering": {
+        "artificial_urgency": 25,
+        "lure_keywords": 15,
+        "messaging_vector_risk": 8,
+    },
+    "credential_theft": {
+        "credential_harvest_cue": 65,
+        "cleartext_sensitive_path": 45,
+    },
+    "financial_fraud": {
+        "financial_social_bait": 40,
+        "regional_momo_reversal": 70,
+    },
+    "identity_theft": {
+        # Reserved for specific identity-document or identity-data indicators
+        # when the detector implements them. Generic words such as "account"
+        # or "government" are intentionally insufficient.
+        "identity_document_request": 65,
+        "identity_data_harvest": 70,
+    },
+    "malware_delivery": {
+        # These IDs must be emitted by a file/payload detector before they
+        # contribute. Merely scanning a PDF or URL is not malware evidence.
+        "malware_payload_detected": 75,
+        "suspicious_file_payload": 55,
+    },
+}
 
 
-def compute_threat_dna(scan_type: str, risk_score: int, indicators: list[dict], regional_intel: dict) -> dict:
-    indicator_ids = {ind.get("id", "") for ind in indicators}
-    blob = " ".join(f"{ind.get('title', '')} {ind.get('detail', '')}".lower() for ind in indicators)
-
-    social_eng = 10 if risk_score > 0 else 0
-    cred_theft = 5 if risk_score > 0 else 0
-    fin_fraud = 5 if risk_score > 0 else 0
-    id_theft = 5 if risk_score > 0 else 0
-    malware = 5 if risk_score > 0 else 0
-
-    if {"artificial_urgency", "lure_keywords", "messaging_vector_risk", "embedded_links"} & indicator_ids:
-        social_eng += 55
-    if any(w in blob for w in ("urgent", "suspend", "reward", "verify", "lure", "impersonat")):
-        social_eng += 25
-
-    if {"brand_combosquatting", "typosquatting_similarity", "credential_harvest_cue", "cleartext_sensitive_path"} & indicator_ids:
-        cred_theft += 65
-    if any(w in blob for w in ("pin", "otp", "password", "login", "credential")):
-        cred_theft += 20
-
-    if {"financial_social_bait", "regional_momo_reversal"} & indicator_ids or any(
-        w in blob for w in ("bank", "fnb", "capitec", "standard bank", "nedbank", "momo", "ewallet", "payment", "refund", "sars")
-    ):
-        fin_fraud += 65
-        id_theft += 35
-
-    if any(w in blob for w in ("id number", "kyc", "account", "tax", "sars", "ers", "government", "passport")):
-        id_theft += 40
-
-    if scan_type == "file" or {"ip_literal_url", "high_risk_tld"} & indicator_ids or any(
-        w in blob for w in ("exe", "apk", "payload", "dropper", "macro", "attachment", "download")
-    ):
-        malware += 55 if scan_type == "file" else 25
-
-    # Scale smoothly with overall risk_score so low-risk scans don't show inflated DNA bars
-    scale = max(0.25, min(1.0, (risk_score / 85.0) if risk_score else 0.0))
-
-    def _cap(val: float) -> int:
-        return min(100, max(0, round(val * scale)))
-
-    return {
-        "social_engineering": _cap(social_eng),
-        "credential_theft": _cap(cred_theft),
-        "financial_fraud": _cap(fin_fraud),
-        "identity_theft": _cap(id_theft),
-        "malware_delivery": _cap(malware),
+def compute_threat_dna(
+    scan_type: str,
+    risk_score: int,
+    indicators: list[dict],
+    regional_intel: dict,
+) -> dict:
+    """Return bounded, evidence-linked category scores from 0 to 100."""
+    del scan_type, regional_intel  # Context alone is not sufficient evidence.
+    indicator_ids = {
+        str(ind.get("id"))
+        for ind in indicators
+        if isinstance(ind, dict) and ind.get("id")
     }
+
+    risk = max(0, min(100, int(risk_score or 0)))
+    result = {}
+    for category, weights in CATEGORY_WEIGHTS.items():
+        raw_score = sum(weight for indicator_id, weight in weights.items() if indicator_id in indicator_ids)
+        # A category cannot outrun the overall scan risk score.
+        result[category] = min(100, risk, raw_score)
+
+    return result
