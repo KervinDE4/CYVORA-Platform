@@ -16,6 +16,10 @@ from apps.call_trust.services.serializers import (
 )
 from apps.call_trust.services.engine import run_call_trust_check
 from .services.phone_normalizer import normalize_phone_number
+from .services.stir_shaken.passport import parse_passport
+from .services.stir_shaken.exceptions import StirShakenError
+from django.utils import timezone
+from datetime import timedelta
 
 from .models import CallCheck
 
@@ -58,6 +62,25 @@ class CallTrustVerifyView(APIView):
         phone_number = (request.data.get("phone_number") or "").strip()
         claimed_institution = (request.data.get("claimed_institution") or "").strip()
         raw_demands = request.data.get("caller_demands") or []
+        passport_token = (request.data.get("passport_token") or "").strip()
+        stir_shaken = {"status": "not_provided", "message": "No PASSporT token was supplied. Caller-risk analysis still runs normally."}
+        if passport_token:
+            try:
+                parsed = parse_passport(passport_token)
+                issued = timezone.datetime.fromtimestamp(parsed.issued_at, tz=timezone.utc)
+                now = timezone.now()
+                if issued > now + timedelta(minutes=5) or now - issued > timedelta(minutes=10):
+                    stir_shaken = {"status": "rejected_stale", "message": "PASSporT issued-at time is outside the accepted 10-minute freshness window."}
+                else:
+                    stir_shaken = {
+                        "status": "parsed_unverified",
+                        "message": "PASSporT structure and freshness passed. Signature and certificate trust have NOT been verified.",
+                        "origin_number": parsed.origin_number,
+                        "destination_numbers": list(parsed.destination_numbers),
+                        "issued_at": parsed.issued_at,
+                    }
+            except StirShakenError as exc:
+                stir_shaken = {"status": "rejected_invalid", "message": str(exc)}
 
         if not isinstance(raw_demands, list):
             return Response(
@@ -163,7 +186,7 @@ class CallTrustVerifyView(APIView):
                     if is_official
                     else "Level C (Gateway Only / Untrusted)"
                 ),
-                "notes": notes,
+                "stir_shaken": stir_shaken,\n                "notes": notes,
             },
             status=status.HTTP_201_CREATED,
         )
