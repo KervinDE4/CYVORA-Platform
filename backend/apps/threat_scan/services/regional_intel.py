@@ -96,17 +96,19 @@ def analyze_regional_scam_context(raw_input: str, host: str = "") -> dict:
                     host_lower == dom or host_lower.endswith(f".{dom}") for dom in meta["official"]
                 )
                 if not is_official_domain:
+                    # A brand mention alone is weak contextual evidence. Do not
+                    # raise the risk score or label it critical without a suspicious
+                    # destination, credential request, payment lure, or corroboration.
                     matched_brands.append(brand_name.upper())
                     categories.append(meta["category"])
-                    score_boost += 18
-                    confidence_boost += 12
                     indicators.append({
-                        "id": f"regional_impersonation_{code.lower()}",
-                        "title": f"Southern Africa Entity Impersonation: {brand_name.upper()} ({pack['country']})",
-                        "severity": "critical",
+                        "id": f"regional_brand_mention_{code.lower()}",
+                        "title": f"Brand reference detected: {brand_name.upper()} ({pack['country']})",
+                        "severity": "low",
                         "detail": (
-                            f"Payload targets {brand_name.upper()} ({pack['country']}) outside official domains "
-                            f"({', '.join(meta['official'])}). Pattern matches {meta['category']}."
+                            f"The content mentions {brand_name.upper()} ({pack['country']}), but this "
+                            "mention alone does not establish impersonation. Verify the sender and any "
+                            "linked domain independently."
                         ),
                     })
 
