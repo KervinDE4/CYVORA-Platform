@@ -10,6 +10,9 @@ class CallTrustVerifySerializer(serializers.Serializer):
         allow_blank=True,
         default="",
     )
+    claimed_institution = serializers.CharField(max_length=160, required=False, allow_blank=True, default="")
+    caller_demands = serializers.ListField(child=serializers.CharField(max_length=60), required=False, default=list)
+    passport_token = serializers.CharField(max_length=16384, required=False, allow_blank=True, write_only=True)
     channel = serializers.CharField(
         max_length=40,
         required=False,
