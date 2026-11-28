@@ -115,17 +115,32 @@ class CallTrustVerifyView(APIView):
             "notes": notes,
         }
 
+        user_id = _get_jwt_user_id(request)
+        if not user_id:
+            return Response(
+                {"detail": "Authenticated user ID missing."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Persist using the fields and verdict choices declared by CallCheck.
+        # Confidence is retained in findings; risk_score is the inverse risk measure.
+        db_verdict = (
+            CallCheck.Verdict.HIGH_RISK
+            if is_spoofed
+            else CallCheck.Verdict.VERIFIED_SAFE
+        )
+        findings["confidence_score"] = confidence
+        findings["risk_level"] = risk_level
         create_kwargs = {
+            "user_id": user_id,
             "phone_number": phone_number,
+            "normalized_phone": normalized,
+            "risk_score": 100 - confidence,
             "claimed_institution": claimed_institution,
             "caller_demands": caller_demands,
-            "confidence_score": confidence,
-            "verdict": verdict_db,
+            "verdict": db_verdict,
             "findings": findings,
         }
-        user_id = _get_jwt_user_id(request)
-        if user_id:
-            create_kwargs["user_id"] = user_id
 
         record = CallCheck.objects.create(**create_kwargs)
 
@@ -165,8 +180,16 @@ class CallTrustHistoryView(APIView):
                 "phone_number": row.phone_number,
                 "claimed_institution": row.claimed_institution,
                 "caller_demands": row.caller_demands or [],
-                "confidence_score": row.confidence_score,
-                "verdict": str(row.verdict).upper(),
+                "confidence_score": int(row.findings.get("confidence_score", 100 - row.risk_score)),
+                "risk_level": row.findings.get(
+                    "risk_level",
+                    "HIGH RISK" if row.risk_score >= 65 else "MEDIUM RISK" if row.risk_score >= 30 else "LOW RISK",
+                ),
+                "verdict": (
+                    "SPOOFED" if row.verdict == CallCheck.Verdict.HIGH_RISK
+                    else "LEGITIMATE" if row.verdict == CallCheck.Verdict.VERIFIED_SAFE
+                    else "SUSPICIOUS"
+                ),
                 "created_at": row.created_at.isoformat() if row.created_at else None,
             }
             for row in qs[:20]
