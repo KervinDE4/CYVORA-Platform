@@ -117,14 +117,14 @@ class ScamReport(models.Model):
         ("rejected", "Rejected"),
     ]
 
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField()
     scan_id = models.UUIDField(null=True, blank=True)
     category = models.CharField(max_length=64, choices=CATEGORY_CHOICES)
     offender_contact = models.TextField(null=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, default="pending", choices=STATUS_CHOICES)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         managed = False
