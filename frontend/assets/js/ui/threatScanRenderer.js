@@ -22,6 +22,7 @@ function renderScanResult(containerEl, scan) {
   const dna = scan.threat_dna || (scan.findings && scan.findings.threat_dna) || {};
   const impact = scan.impact_prediction || (scan.findings && scan.findings.impact_prediction) || {};
   const story = scan.attack_story || (scan.findings && scan.findings.attack_story) || [];
+  const attackProfile = scan.attack_profile || (scan.findings && scan.findings.attack_profile) || {};
   const forensics = scan.forensics_snapshot || (scan.findings && scan.findings.forensics_snapshot) || {};
   const indicators = (scan.findings && scan.findings.indicators) || [];
   const confidence = scan.confidence_score ?? (scan.findings && scan.findings.confidence_score) ?? 0;
@@ -59,6 +60,21 @@ function renderScanResult(containerEl, scan) {
     )
     .join("");
 
+  const profileEvidenceHtml = (attackProfile.evidence || [])
+    .map((item) => `<li><strong>${escapeHtml(item.title)}</strong> <span class="muted">(${escapeHtml(item.severity)})</span></li>`)
+    .join("");
+  const profileLimitationsHtml = (attackProfile.limitations || [])
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+  const attackProfileHtml = `
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin-top:0;">Threat Profile: ${escapeHtml(attackProfile.title || "Not classified")}</h3>
+      <p class="muted">${escapeHtml(attackProfile.summary || "No specific attack profile was established from the available indicators.")}</p>
+      ${profileEvidenceHtml ? `<h4>Evidence supporting this profile</h4><ul class="indicator-list">${profileEvidenceHtml}</ul>` : ""}
+      ${profileLimitationsHtml ? `<h4>Analysis limitations</h4><ul class="indicator-list">${profileLimitationsHtml}</ul>` : ""}
+    </div>
+  `;
+
   const indicatorsHtml = indicators.length
     ? indicators
         .map(
@@ -81,6 +97,7 @@ function renderScanResult(containerEl, scan) {
         </div>
       </div>
       <p style="margin:10px 0 0;">${escapeHtml(explanation)}</p>
+      ${attackProfileHtml}
       <div class="report-action-box" style="margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
         <input id="threatScanReportNote" type="text" class="report-note-input" placeholder="Optional context about this suspicious link or message" aria-label="Optional report context" />
         <button id="btnReportThreatScan" type="button" class="btn-report hidden">Report Scan</button>
