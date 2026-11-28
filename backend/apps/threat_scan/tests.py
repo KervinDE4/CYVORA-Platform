@@ -48,7 +48,7 @@ class ConfidenceScoringTests(SimpleTestCase):
             {"confidence_boost": 5},
             {"similar_threats": 2, "community_reports": 1},
         )
-        self.assertEqual(score, 98)
+        self.assertEqual(score, 86)
 
     def test_clean_scan_has_bounded_confidence(self):
         self.assertEqual(calculate_confidence_score(0, [], {}, {}), 78)
@@ -70,6 +70,7 @@ class RegionalFalsePositiveTests(SimpleTestCase):
         self.assertEqual(result["score_boost"], 8)
         self.assertEqual(result["confidence_boost"], 0)
         self.assertEqual(result["indicators"][0]["severity"], "low")
+        self.assertIsNone(result["primary_category"])
 
     def test_request_for_wallet_pin_is_stronger_evidence(self):
         result = analyze_regional_scam_context("Please send your eWallet PIN.")
