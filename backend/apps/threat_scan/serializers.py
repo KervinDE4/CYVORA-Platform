@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Scan
+from .models import Scan, ScamReport
 
 
 class ThreatScanAnalyzeSerializer(serializers.Serializer):
@@ -110,3 +110,15 @@ class ScanRecordSerializer(serializers.ModelSerializer):
     def get_community_reports(self, obj):
         community = self._findings(obj).get("community_intelligence") or {}
         return community.get("community_reports", 0) if isinstance(community, dict) else 0
+
+
+
+class ThreatScanEscalationSerializer(serializers.Serializer):
+    """Optional user context for escalating an existing scan."""
+
+    description = serializers.CharField(
+        max_length=2000, required=False, allow_blank=True, trim_whitespace=True
+    )
+    offender_contact = serializers.CharField(
+        max_length=500, required=False, allow_blank=True, trim_whitespace=True
+    )
