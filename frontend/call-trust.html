@@ -80,7 +80,7 @@
               Independent enterprise verification for inbound caller claims, voice authenticity, and telecom routing telemetry.
             </p>
             <div class="protocol-bar">
-              <span class="protocol-badge"><span class="dot-green"></span> STIR/SHAKEN Protocol v3.8 Active</span>
+              <span id="stirShakenStatus" class="protocol-badge" data-state="not_checked"><span class="status-dot"></span> STIR/SHAKEN: Not checked</span>
             </div>
           </div>
 
@@ -122,7 +122,7 @@
                 </button>
               </div>
 
-              <!-- Multi-select: What the caller needed -->
+              <div class="field stir-token-field"><label for="passportToken">STIR/SHAKEN PASSporT (optional)</label><textarea id="passportToken" rows="3" maxlength="16384" placeholder="Paste a PASSporT token supplied by a trusted telecom source"></textarea><small>Providing a token only checks its structure and freshness at this stage. It does not prove the caller is authentic.</small></div>\n\n              <!-- Multi-select: What the caller needed -->
               <div class="demands-block">
                 <div class="demands-header">
                   <span class="demands-label">WHAT THE CALLER NEEDED (SELECT ALL THAT APPLY)</span>
@@ -189,7 +189,7 @@
                 <div><span class="k">Reported Target:</span> <strong id="metaTarget">+268 7914 8820</strong></div>
                 <div><span class="k">Asserted Identity:</span> <strong id="metaIdentity">FNB Eswatini (Retail Fraud)</strong></div>
                 <div><span class="k">Caller Demands:</span> <strong id="metaDemands">None selected yet</strong></div>
-                <div><span class="k">Attestation:</span> <strong id="metaAttestation">Level C (Gateway Only / Untrusted)</strong></div>
+                <div><span class="k">STIR/SHAKEN:</span> <strong id="metaAttestation">Not checked</strong></div>
               </div>
             </div>
 
