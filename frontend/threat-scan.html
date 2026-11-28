@@ -97,6 +97,7 @@
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/report-action.js"></script>
   <script src="assets/js/api/threatScanApi.js"></script>
   <script src="assets/js/ui/threatScanRenderer.js"></script>
   <script>
@@ -141,16 +142,6 @@ document.getElementById("btnSignOut")?.addEventListener("click", async () => {
       const historyBody = document.getElementById("historyTableBody");
       const verdictFilter = document.getElementById("verdictFilter");
       const btnRefreshHistory = document.getElementById("btnRefreshHistory");
-      const manualJwtInput = document.getElementById("manualJwtInput");
-      const btnSaveToken = document.getElementById("btnSaveToken");
-
-      manualJwtInput.value = window.CyvoraAuth.getManualBearerToken();
-
-      btnSaveToken.addEventListener("click", () => {
-        window.CyvoraAuth.setManualBearerToken(manualJwtInput.value);
-        loadHistory();
-      });
-
       tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
           tabs.forEach((t) => t.classList.remove("active"));
@@ -246,6 +237,32 @@ document.getElementById("btnSignOut")?.addEventListener("click", async () => {
           });
           latestScan = scan;
           window.ThreatScanRenderer.renderScanResult(resultContainer, latestScan);
+
+          const reportController = window.CyvoraReportAction?.initReportControl({
+            buttonEl: document.getElementById("btnReportThreatScan"),
+            statusEl: document.getElementById("threatScanReportStatus"),
+            noteInputEl: document.getElementById("threatScanReportNote"),
+            moduleType: "threat_scan",
+            getPayload: () => {
+              const verdict = String(latestScan?.verdict || "").toUpperCase();
+              const score = Number(latestScan?.risk_score ?? latestScan?.score ?? 0);
+              const riskLevel =
+                score >= 70 || verdict === "MALICIOUS"
+                  ? "HIGH RISK"
+                  : score >= 35 || verdict === "SUSPICIOUS"
+                    ? "MEDIUM RISK"
+                    : "LOW RISK";
+
+              return latestScan ? {
+                targetValue: latestScan.input_value || inputValue || file?.name || "",
+                verdict,
+                riskLevel,
+                sourceRecordId: latestScan.id || null,
+              } : null;
+            },
+          });
+          reportController?.refreshForCurrentTarget();
+
           bindResultActions(latestScan);
           await loadHistory();
         } catch (err) {
