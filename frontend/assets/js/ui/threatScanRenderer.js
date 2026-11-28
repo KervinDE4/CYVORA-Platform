@@ -81,6 +81,11 @@ function renderScanResult(containerEl, scan) {
         </div>
       </div>
       <p style="margin:10px 0 0;">${escapeHtml(explanation)}</p>
+      <div class="report-action-box" style="margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+        <input id="threatScanReportNote" type="text" class="report-note-input" placeholder="Optional context about this suspicious link or message" aria-label="Optional report context" />
+        <button id="btnReportThreatScan" type="button" class="btn-report hidden">Report Scan</button>
+        <div id="threatScanReportStatus" class="report-status hidden" role="status" aria-live="polite"></div>
+      </div>
       <div class="form-row" style="margin-top:14px;">
         <button type="button" class="btn secondary" id="btnAdvisor">Ask Security Advisor</button>
         <button type="button" class="btn secondary" id="btnTakedown">Generate Takedown Packet</button>
