@@ -1,9 +1,9 @@
 """Evidence-led attack-path descriptions for ThreatScan.
 
-These are hypotheses, not forensic proof of compromise. The scan can observe
-submitted content and indicators; it cannot infer that a victim clicked,
-entered credentials, or lost funds.
+Observed indicators and possible attacker actions are deliberately separated.
+A reconstructed path is a hypothesis, not proof of victim compromise.
 """
+from .attack_profiles import build_attack_profile
 
 
 def reconstruct_attack_story(
@@ -12,56 +12,41 @@ def reconstruct_attack_story(
     threat_dna: dict,
     regional_intel: dict,
     indicators: list[dict] | None = None,
+    attack_profile: dict | None = None,
 ) -> list[dict]:
     indicators = indicators or []
-    brands = regional_intel.get("targeted_brands") or []
-    observed = []
+    profile = attack_profile or build_attack_profile(scan_type, indicators)
+    story = []
 
-    for indicator in indicators[:5]:
-        title = str(indicator.get("title") or "Detection indicator")[:120]
-        detail = str(indicator.get("detail") or "A detection rule matched this submitted content.")[:280]
-        observed.append({
-            "step": len(observed) + 1,
-            "title": title,
-            "detail": detail,
+    for indicator in profile.get("evidence", [])[:5]:
+        story.append({
+            "step": len(story) + 1,
+            "title": f"Observed: {indicator['title']}",
+            "detail": (
+                f"CYVORA matched indicator '{indicator['indicator_id']}' "
+                f"(severity: {indicator['severity']}). This is evidence in the submitted content."
+            ),
             "evidence_status": "observed",
         })
 
-    if not observed:
-        observed.append({
+    if not story:
+        story.append({
             "step": 1,
             "title": "Submitted content inspected",
-            "detail": f"CYVORA analysed the submitted {scan_type} content. No specific malicious indicator was recorded.",
+            "detail": (
+                f"CYVORA analysed the submitted {scan_type} content. "
+                "No indicator supporting a specific attack profile was recorded."
+            ),
             "evidence_status": "observed",
         })
 
-    # Add a clearly labelled possible next step only when findings justify it.
-    possible = []
-    indicator_ids = {str(item.get("id", "")) for item in indicators}
     if verdict in {"suspicious", "malicious"}:
-        if indicator_ids & {"credential_harvest_cue", "brand_combosquatting", "typosquatting_similarity", "cleartext_sensitive_path"}:
-            target = brands[0] if brands else "an impersonated service"
-            possible.append({
-                "title": "Possible credential-harvesting attempt",
-                "detail": f"If a user follows the submitted link, it could lead to a deceptive page impersonating {target}. No credential submission is established by this scan.",
-            })
-        if indicator_ids & {"regional_momo_reversal", "financial_social_bait"}:
-            possible.append({
-                "title": "Possible financial social engineering",
-                "detail": "The content may be intended to pressure a recipient into revealing a PIN, approving a transaction, or returning funds. No transfer is established by this scan.",
-            })
-        if threat_dna.get("malware_delivery", 0) >= 50:
-            possible.append({
-                "title": "Possible malware delivery",
-                "detail": "The submitted content has file or payload-related signals. This scan does not establish that code executed or a device was compromised.",
+        for item in profile.get("possible_steps", []):
+            story.append({
+                "step": len(story) + 1,
+                "title": item["title"],
+                "detail": item["detail"],
+                "evidence_status": "possible",
             })
 
-    for item in possible:
-        observed.append({
-            "step": len(observed) + 1,
-            "title": item["title"],
-            "detail": item["detail"],
-            "evidence_status": "possible",
-        })
-
-    return observed
+    return story
