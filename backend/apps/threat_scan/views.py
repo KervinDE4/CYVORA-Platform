@@ -159,7 +159,7 @@ def _escalation_category(scan_obj):
         return "caller_spoofing"
     if scan_obj.input_type in {"url", "screenshot"}:
         return "malicious_link"
-    if scan_obj.input_type in {"text", "pdf"}:
+    if scan_obj.input_type == "text" and scan_obj.channel in {"sms", "whatsapp"}:
         return "sms_whatsapp_phishing"
     return None
 
