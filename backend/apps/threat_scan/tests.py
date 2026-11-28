@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 
 from .services.confidence_engine import calculate_confidence_score
-from .services.risk_scoring import verdict_from_score
+from .services.risk_scoring import combine_message_url_scores, verdict_from_score
 from .services.regional_intel import analyze_regional_scam_context
 
 
@@ -21,6 +21,12 @@ class RiskClassificationTests(SimpleTestCase):
     def test_scores_are_clamped(self):
         self.assertEqual(verdict_from_score(-10), "safe")
         self.assertEqual(verdict_from_score(150), "malicious")
+
+    def test_weak_message_and_url_signals_do_not_get_corroboration_bonus(self):
+        self.assertEqual(combine_message_url_scores(20, 20), 20)
+
+    def test_meaningful_message_and_url_signals_get_limited_bonus(self):
+        self.assertEqual(combine_message_url_scores(35, 30), 37)
 
 
 class ConfidenceScoringTests(SimpleTestCase):
