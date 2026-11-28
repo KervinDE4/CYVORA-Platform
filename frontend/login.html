@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/threat-scan.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    .auth-logo{display:block;width:min(260px,80%);height:auto;margin:0 auto 16px;}
     .auth-wrapper {
       max-width: 440px;
       margin: 48px auto;
@@ -39,7 +40,7 @@
 <body>
   <div class="cyvora-shell auth-wrapper">
     <div class="card">
-      <h1 class="brand-title">CYVORA Platform</h1>
+      <img src="assets/images/cyvora-logo.jpeg" alt="CYVORA" class="auth-logo"><h1 class="brand-title">CYVORA</h1>
       <p class="brand-sub" style="margin-bottom:18px;">
         Sign in or create an account to access ThreatScan
       </p>
@@ -166,7 +167,12 @@
               goToDestination();
             }
           } else {
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            const confirmationUrl = new URL("login.html?verified=1", window.location.href).toString();
+            const { data, error } = await supabase.auth.signUp({
+              email,
+              password,
+              options: { emailRedirectTo: confirmationUrl }
+            });
             if (error) throw error;
 
             // If email confirmation is off in Supabase, a session is returned right away
