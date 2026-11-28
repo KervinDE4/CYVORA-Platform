@@ -77,6 +77,9 @@ def parse_passport(compact_token: str) -> ParsedPassport:
     if header.get("crit"):
         raise PassportFormatError("Critical JOSE header extensions are not supported.")
 
+    if header.get("ppt") != "shaken":
+        raise PassportFormatError("PASSporT header ppt must be 'shaken'.")
+
     certificate_url = header.get("x5u")
     if not isinstance(certificate_url, str) or not certificate_url:
         raise PassportFormatError("PASSporT header is missing its x5u certificate URL.")
