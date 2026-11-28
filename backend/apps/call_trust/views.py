@@ -19,7 +19,7 @@ from .services.phone_normalizer import normalize_phone_number
 from .services.stir_shaken.passport import parse_passport
 from .services.stir_shaken.exceptions import StirShakenError
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from .models import CallCheck
 
@@ -67,7 +67,7 @@ class CallTrustVerifyView(APIView):
         if passport_token:
             try:
                 parsed = parse_passport(passport_token)
-                issued = timezone.datetime.fromtimestamp(parsed.issued_at, tz=timezone.utc)
+                issued = datetime.fromtimestamp(parsed.issued_at, tz=dt_timezone.utc)
                 now = timezone.now()
                 if issued > now + timedelta(minutes=5) or now - issued > timedelta(minutes=10):
                     stir_shaken = {"status": "rejected_stale", "message": "PASSporT issued-at time is outside the accepted 10-minute freshness window."}
