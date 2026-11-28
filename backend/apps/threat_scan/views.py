@@ -9,11 +9,12 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Scan
+from .models import Scan, ScamReport
 from .serializers import (
     ScanRecordSerializer,
     ThreatScanAnalyzeSerializer,
     ThreatScanAdvisorRequestSerializer,
+    ThreatScanEscalationSerializer,
 )
 from .services.engine import run_threat_scan
 from .services.ai_advisor import generate_security_advisor_guidance
@@ -149,3 +150,101 @@ class ThreatScanAdvisorView(APIView):
         )
         guidance = generate_security_advisor_guidance(scan_obj)
         return Response(guidance, status=status.HTTP_200_OK)
+
+
+
+def _escalation_category(scan_obj):
+    """Map the scan's actual input type to an allowed report category."""
+    if scan_obj.input_type == "phone_check":
+        return "caller_spoofing"
+    if scan_obj.input_type in {"url", "screenshot"}:
+        return "malicious_link"
+    if scan_obj.input_type in {"text", "pdf"}:
+        return "sms_whatsapp_phishing"
+    return None
+
+
+def _build_escalation_description(scan_obj, user_description=""):
+    """Create a concise, evidence-led report without asserting victim impact."""
+    parts = [
+        "Submitted from CYVORA ThreatScan for human review.",
+        f"Scan type: {scan_obj.input_type}.",
+        f"Scan verdict: {scan_obj.verdict}.",
+        f"Risk score: {scan_obj.risk_score}/100.",
+    ]
+    if scan_obj.headline:
+        parts.append(f"Headline: {scan_obj.headline[:300]}.")
+    if user_description:
+        parts.append(f"User-provided context: {user_description.strip()[:2000]}")
+    parts.append("This report is unverified and requires human review.")
+    return "\\n".join(parts)
+
+
+class ThreatScanEscalateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, scan_id):
+        scan_obj = get_object_or_404(
+            Scan,
+            id=scan_id,
+            user_id=request.user.id,
+            module_type="threat_scan",
+        )
+
+        serializer = ThreatScanEscalationSerializer(data=request.data or {})
+        serializer.is_valid(raise_exception=True)
+
+        existing = ScamReport.objects.filter(
+            user_id=request.user.id,
+            scan_id=scan_obj.id,
+        ).first()
+        if existing:
+            return Response(
+                {
+                    "detail": "This scan has already been escalated.",
+                    "report_id": str(existing.id),
+                    "status": existing.status,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        category = _escalation_category(scan_obj)
+        if category is None:
+            return Response(
+                {"detail": "This scan type cannot currently be escalated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            report = ScamReport.objects.create(
+                user_id=request.user.id,
+                scan_id=scan_obj.id,
+                category=category,
+                offender_contact=serializer.validated_data.get("offender_contact") or None,
+                description=_build_escalation_description(
+                    scan_obj,
+                    serializer.validated_data.get("description", ""),
+                ),
+                status="pending",
+            )
+        except Exception:
+            logger.exception(
+                "ThreatScan escalation failed (scan_id=%s, user_id=%s)",
+                scan_obj.id,
+                request.user.id,
+            )
+            return Response(
+                {"detail": "The report could not be saved. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {
+                "detail": "Your report has been submitted for review.",
+                "report_id": str(report.id),
+                "status": report.status,
+                "category": report.category,
+                "created_at": report.created_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
